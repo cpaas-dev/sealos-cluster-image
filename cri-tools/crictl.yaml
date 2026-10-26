@@ -1,0 +1,2 @@
+image-endpoint: unix:///var/run/image-cri-shim.sock
+runtime-endpoint: unix:///var/run/containerd/containerd.sock

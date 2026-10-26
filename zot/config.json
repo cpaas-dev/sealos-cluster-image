@@ -1,0 +1,18 @@
+{
+    "storage": {
+        "rootDirectory": "/var/lib/zot",
+        "dedupe": false,
+        "gc": false,
+        "gcDelay": "24h",
+        "gcInterval": "24h"
+    },
+    "http": {
+        "address": "0.0.0.0",
+        "port": "8080",
+        "realm": "zot-offline"
+    },
+    "log": {
+        "level": "info",
+        "output": "/var/log/zot/zot.log"
+    }
+}
