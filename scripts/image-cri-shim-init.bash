@@ -20,9 +20,9 @@ source "${BASEDIR}/common.bash"
 readonly SHIM_BIN_DIR=${BIN_DIR:-/usr/bin}
 
 declare -a INSTALL_FILES=(
-    "644 ../etc/image-cri-shim.service /etc/systemd/system/"
-    "644 ../etc/image-cri-shim.yaml    /etc/"
-    "755 ../cri/image-cri-shim         ${SHIM_BIN_DIR}/"
+    "644 ${BASEDIR}/../etc/image-cri-shim.service /etc/systemd/system/"
+    "644 ${BASEDIR}/../etc/image-cri-shim.yaml    /etc/"
+    "755 ${BASEDIR}/../bin/image-cri-shim         ${SHIM_BIN_DIR}/"
 )
 
 for entry in "${INSTALL_FILES[@]}"; do
@@ -30,7 +30,7 @@ for entry in "${INSTALL_FILES[@]}"; do
     install -Dm"${mode}" -t "$dest" "$src"
 done
 
-[[ -f ../etc/crictl.yaml ]] && install -Dm644 -t /etc/ ../etc/crictl.yaml
+[[ -f ${BASEDIR}/../etc/crictl.yaml ]] && install -Dm644 -t /etc/ "${BASEDIR}/../etc/crictl.yaml"
 
 check_service start image-cri-shim
 check_status image-cri-shim

@@ -24,10 +24,11 @@ readonly REG_BIN_DIR=${BIN_DIR:-/usr/bin}
 install -d -m 755 "${REG_DATA_DIR}" "${REG_CONF_DIR}"
 
 declare -a INSTALL_FILES=(
-    "755 ../cri/registry            ${REG_BIN_DIR}/"
-    "644 ../etc/registry.service    /etc/systemd/system/"
-    "644 ../etc/registry_config.yml ${REG_CONF_DIR}/"
-    "644 ../etc/registry_htpasswd   ${REG_CONF_DIR}/"
+    "755 ${BASEDIR}/../bin/zot            ${REG_BIN_DIR}/"
+    "644 ${BASEDIR}/../etc/registry.service    /etc/systemd/system/"
+    "644 ${BASEDIR}/../etc/registry_config.yml ${REG_CONF_DIR}/"
+    "644 ${BASEDIR}/../etc/registry_htpasswd   ${REG_CONF_DIR}/"
+    "644 ${BASEDIR}/../etc/registry/config.json ${REG_CONF_DIR}/"
 )
 
 for entry in "${INSTALL_FILES[@]}"; do

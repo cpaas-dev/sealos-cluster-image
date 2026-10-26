@@ -1,0 +1,16 @@
+[Unit]
+Description=Sealos local OCI registry
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/bin/zot serve /etc/registry/config.json
+Restart=always
+RestartSec=5
+User=root
+Group=root
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

@@ -19,12 +19,11 @@ source "${BASEDIR}/common.bash"
 
 readonly CRUN_BIN_DIR=${BIN_DIR:-/usr/bin}
 
-if ! "${CRUN_BIN_DIR}/crun_" --version 2>/dev/null | grep -q ^crun; then
+if ! "${CRUN_BIN_DIR}/crun" --version 2>/dev/null | grep -q ^crun; then
     logger "crun not available, skipped"
     exit 0
 fi
 
-cp -a "${CRUN_BIN_DIR}/crun_" "${CRUN_BIN_DIR}/crun"
-sed -i -E 's~default_runtime_name = ".+"~default_runtime_name = "crun"~' ../etc/config.toml
+sed -i -E 's~default_runtime_name = ".+"~default_runtime_name = "crun"~' "${BASEDIR}/../etc/config.toml"
 
 logger "init crun success"

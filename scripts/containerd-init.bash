@@ -25,20 +25,14 @@ readonly CTD_LIB_DIR=/opt/containerd
 
 install -d -m 755 "$CTD_CONF_DIR" "$CTD_LIB_DIR" "${CTD_CONF_DIR}/certs.d/${REG_DOMAIN}:${REG_PORT}"
 
-tar -zxf ../cri/libseccomp.tar.gz -C "$CTD_LIB_DIR"
-echo "${CTD_LIB_DIR}/lib" >/etc/ld.so.conf.d/containerd.conf
-ldconfig
-
-tar -zxf ../cri/cri-containerd.tar.gz --strip-components 2 -C "$CTD_BIN_DIR"
-tar -tf ../cri/cri-containerd.tar.gz | while read -r entry; do
-    name="${entry##*/}"
-    [[ -n "$name" ]] && chmod a+x "${CTD_BIN_DIR}/${name}"
-done
+# The vendor image already installs containerd and ctr into the rootfs. Older
+# WIP images carried an extra cri-containerd archive, which is not present in
+# the split vendor layout.
 
 declare -a INSTALL_FILES=(
-    "644 ../etc/containerd.service /etc/systemd/system/"
-    "644 ../etc/config.toml        ${CTD_CONF_DIR}/"
-    "644 ../etc/hosts.toml         ${CTD_CONF_DIR}/certs.d/${REG_DOMAIN}:${REG_PORT}/"
+    "644 ${BASEDIR}/../etc/containerd.service /etc/systemd/system/"
+    "644 ${BASEDIR}/../etc/config.toml        ${CTD_CONF_DIR}/"
+    "644 ${BASEDIR}/../etc/hosts.toml         ${CTD_CONF_DIR}/certs.d/${REG_DOMAIN}:${REG_PORT}/"
 )
 
 for entry in "${INSTALL_FILES[@]}"; do

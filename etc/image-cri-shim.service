@@ -1,0 +1,18 @@
+[Unit]
+Description=Image CRI Shim Service
+After=network-online.target containerd.service
+Wants=network-online.target
+Requires=containerd.service
+
+[Service]
+Type=simple
+ExecStart=/bin/image-cri-shim --file=/etc/image-cri-shim.yaml
+Restart=always
+RestartSec=5
+User=root
+Group=root
+LimitNOFILE=1048576
+LimitNPROC=infinity
+
+[Install]
+WantedBy=multi-user.target

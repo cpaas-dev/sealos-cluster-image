@@ -1,0 +1,19 @@
+[Unit]
+Description=Kubernetes Kubelet
+Documentation=https://kubernetes.io/docs/
+After=containerd.service
+Requires=containerd.service
+
+[Service]
+ExecStart=/bin/kubelet
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=0
+KillMode=process
+Delegate=yes
+LimitNOFILE=1048576
+LimitNPROC=infinity
+TasksMax=infinity
+
+[Install]
+WantedBy=multi-user.target

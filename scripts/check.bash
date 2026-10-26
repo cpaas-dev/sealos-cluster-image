@@ -47,7 +47,7 @@ logger "check registry success"
 
 # apparmor
 if ! command_exists apparmor_parser; then
-    sed -i 's/disable_apparmor = false/disable_apparmor = true/g' ../etc/config.toml
+    sed -i 's/disable_apparmor = false/disable_apparmor = true/g' "${BASEDIR}/../etc/config.toml"
     warn "Replace disable_apparmor = false to disable_apparmor = true"
 fi
 logger "check apparmor success"

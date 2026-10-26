@@ -26,7 +26,7 @@ if systemctl list-unit-files registry.service &>/dev/null; then
 fi
 
 declare -a CLEAN_FILES=(
-    "${REG_BIN_DIR}/registry"
+    "${REG_BIN_DIR}/zot"
     /etc/systemd/system/registry.service
     /etc/registry.yml
 )

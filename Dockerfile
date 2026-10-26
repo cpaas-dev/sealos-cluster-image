@@ -2,7 +2,7 @@
 
 ARG BASE_IMAGE=docker.io/rockylinux/rockylinux:10.2.20260525.0
 
-ARG INST_KUBERNETES_V=v1.33.13
+ARG INST_KUBERNETES_V=v1.37.1
 ARG INST_CONTAINERD_V=v2.3.4
 ARG INST_CRUN_V=v1.29.1
 ARG INST_ZOT_V=v2.1.20
@@ -12,23 +12,30 @@ ARG INST_CRI_TOOLS_V=v1.36.0
 FROM ghcr.io/cpaas-dev/kluster-vendor-kubernetes:${INST_KUBERNETES_V} AS kubernetes
 FROM ghcr.io/cpaas-dev/kluster-vendor-containerd:${INST_CONTAINERD_V} AS containerd
 FROM ghcr.io/cpaas-dev/kluster-vendor-crun:${INST_CRUN_V} AS crun
-FROM ghcr.io/cpaas-dev/kluster-vendor-zot:${INST_CRUN_V} AS zot
+FROM ghcr.io/cpaas-dev/kluster-vendor-zot:${INST_ZOT_V} AS zot
 FROM ghcr.io/cpaas-dev/kluster-vendor-sealos:${INST_SEALOS_V} AS sealos
-FROM ghcr.io/cpaas-dev/kluster-vendor-cri-tools:${INST_SEALOS_V} AS cri-tools
+FROM ghcr.io/cpaas-dev/kluster-vendor-cri-tools:${INST_CRI_TOOLS_V} AS cri-tools
 
 FROM ${BASE_IMAGE}
 
-RUN mkdir -p /cpaas /images /registry
-COPY scripts /cpaas/scripts
+RUN mkdir -p /bin /etc /images/shim /registry /scripts
+COPY scripts /scripts
+COPY kubernetes/bin/kubelet-*.sh /scripts/
+COPY cri-tools/crictl.yaml /etc/crictl.yaml
+COPY etc /etc
 
-ARG INST_KUBERNETES_V=v1.33.13
+ARG INST_KUBERNETES_V=v1.37.1
 ARG INST_SEALOS_V=v5.1.1
 
 COPY --from=kubernetes \
     /cpaas/vendor/kubernetes/kubeadm \
     /cpaas/vendor/kubernetes/kubectl \
     /cpaas/vendor/kubernetes/kubelet \
-    /cpaas/bin/
+    /bin/
+
+COPY --from=cri-tools \
+    /cpaas/vendor/cri-tools/crictl \
+    /bin/
 
 COPY --from=kubernetes \
     /cpaas/vendor/kubernetes/DefaultImageList \
@@ -43,20 +50,20 @@ COPY --from=containerd \
     /cpaas/vendor/containerd/containerd-shim-runc-v2 \
     /cpaas/vendor/containerd/containerd-stress \
     /cpaas/vendor/containerd/ctr \
-    /cpaas/bin/
+    /bin/
 
 COPY --from=crun \
     /cpaas/vendor/crun/crun \
-    /cpaas/bin/
+    /bin/
 
 COPY --from=zot \
     /cpaas/vendor/zot/zot \
     /cpaas/vendor/zot/zli \
-    /cpaas/bin/
+    /bin/
 
 COPY --from=sealos \
     /cpaas/vendor/sealos/image-cri-shim \
-    /cpaas/bin/
+    /bin/
 
 ENV \
     defaultVIP=10.103.97.2 \
@@ -84,11 +91,9 @@ LABEL \
     image=ghcr.io/labring/lvscare:${INST_SEALOS_V}
 
 LABEL \
-    init="init-cri.bash \$registryDomain \$registryPort && bash init.bash" \
-    clean="clean.bash && bash clean-cri.bash \$criData" \
-    check="check.bash \$registryData" \
-    init-registry="init-registry.bash \$registryData \$registryConfig" \
-    clean-registry="clean-registry.bash \$registryData \$registryConfig" \
+    init="bash cri-init.bash \$registryDomain \$registryPort && bash init.bash" \
+    clean="bash clean.bash && bash cri-clean.bash \$criData" \
+    check="bash check.bash \$registryData" \
+    init-registry="bash registry-init.bash \$registryData \$registryConfig" \
+    clean-registry="bash registry-clean.bash \$registryData \$registryConfig" \
     vip="\$defaultVIP"
-
-COPY . .

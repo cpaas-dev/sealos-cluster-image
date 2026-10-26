@@ -1,0 +1,18 @@
+[Unit]
+Description=containerd container runtime
+Documentation=https://containerd.io
+After=network.target local-fs.target
+
+[Service]
+Type=notify
+ExecStart=/bin/containerd --config /etc/containerd/config.toml
+Delegate=yes
+KillMode=process
+Restart=always
+RestartSec=5
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target

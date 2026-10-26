@@ -21,17 +21,17 @@ readonly REG_DOMAIN=${1:-sealos.hub}
 readonly REG_PORT=${2:-5000}
 
 # install image-cri-shim
-if ! bash image-cri-shim_init.bash "${REG_DOMAIN}" "${REG_PORT}"; then
+if ! bash "${BASEDIR}/image-cri-shim-init.bash" "${REG_DOMAIN}" "${REG_PORT}"; then
     error "====init image-cri-shim failed!===="
 fi
 
 # install crun
-if ! bash crun_init.bash "${REG_DOMAIN}" "${REG_PORT}"; then
+if ! bash "${BASEDIR}/crun-init.bash" "${REG_DOMAIN}" "${REG_PORT}"; then
     error "====init crun failed!===="
 fi
 
 # install containerd
-if ! bash containerd_init.bash "${REG_DOMAIN}" "${REG_PORT}"; then
+if ! bash "${BASEDIR}/containerd-init.bash" "${REG_DOMAIN}" "${REG_PORT}"; then
     error "====init containerd failed!===="
 fi
 

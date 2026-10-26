@@ -25,7 +25,7 @@ ensure_localhost_hosts() {
 }
 
 apply_sealos_sysctl() {
-    sort -u ../etc/sysctl.d/*.conf | grep -v '^$' | while read -r str; do
+    sort -u "${BASEDIR}/../etc/sysctl.d/"*.conf | grep -v '^$' | while read -r str; do
         local k="${str%=*}"
         local v="${str#*=}"
         echo "${k}=${v} # sealos"
@@ -40,7 +40,7 @@ apply_sealos_limits() {
     fi
     {
         echo '### sealos begin ###'
-        grep -hvE '^#|^$' ../etc/limits.d/*.conf | awk '{print $1,$2,$3,$4}'
+        grep -hvE '^#|^$' "${BASEDIR}/../etc/limits.d/"*.conf | awk '{print $1,$2,$3,$4}'
         echo '### sealos end ###'
     } >>/etc/security/limits.conf
 }
@@ -49,9 +49,9 @@ ensure_localhost_hosts
 disable_firewalld
 
 declare -a INSTALL_FILES=(
-    "755 ../scripts/kubelet-pre-start.sh  ${KUBE_BIN_DIR}/"
-    "755 ../scripts/kubelet-post-stop.sh  ${KUBE_BIN_DIR}/"
-    "644 ../etc/kubelet.service            /etc/systemd/system/"
+    "755 ${BASEDIR}/kubelet-pre-start.sh  ${KUBE_BIN_DIR}/"
+    "755 ${BASEDIR}/kubelet-post-stop.sh  ${KUBE_BIN_DIR}/"
+    "644 ${BASEDIR}/../etc/kubelet.service            /etc/systemd/system/"
 )
 
 for entry in "${INSTALL_FILES[@]}"; do
@@ -59,8 +59,10 @@ for entry in "${INSTALL_FILES[@]}"; do
     install -Dm"${mode}" -t "$dest" "$src"
 done
 
-cp -a ../bin/* "${KUBE_BIN_DIR}/"
-cp -a ../etc/systemd/system /etc/systemd
+cp -a "${BASEDIR}/../bin/"* "${KUBE_BIN_DIR}/"
+if [[ -d ${BASEDIR}/../etc/systemd/system ]]; then
+    cp -a "${BASEDIR}/../etc/systemd/system" /etc/systemd
+fi
 
 apply_sealos_sysctl
 apply_sealos_limits

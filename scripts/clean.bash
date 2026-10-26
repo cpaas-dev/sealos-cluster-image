@@ -17,6 +17,6 @@
 BASEDIR=$(cd "$(dirname "$0")" || exit; pwd)
 source "${BASEDIR}/common.bash"
 
-bash kube-clean.bash
+bash "${BASEDIR}/kube-clean.bash"
 
 logger "clean kube success"
