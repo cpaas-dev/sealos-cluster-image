@@ -1,0 +1,14 @@
+apiVersion: apps.sealos.io/v1beta1
+kind: Cluster
+metadata:
+  name: kubernetes-v137-cilium
+spec:
+  hosts:
+    - ips:
+        - 192.168.0.96:22
+      roles:
+        - master
+        - amd64
+  image:
+    - bbzhu/kubernetes:v1.37.1
+  ssh: {}

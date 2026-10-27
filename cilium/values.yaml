@@ -1,0 +1,16 @@
+kubeProxyReplacement: false
+ipam:
+  mode: kubernetes
+routingMode: tunnel
+tunnelProtocol: vxlan
+operator:
+  replicas: 1
+  image:
+    useDigest: false
+image:
+  useDigest: false
+envoy:
+  image:
+    useDigest: false
+extraConfig:
+  prepend-iptables-chains: "false"
