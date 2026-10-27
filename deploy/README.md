@@ -18,6 +18,16 @@ if Flannel is installed; migrating an existing CNI requires a separate procedure
 container image is not a Sealos application image and must not appear in
 `spec.image`. Install the packaged manifest after runtime initialization.
 
+The current `node01` Kubernetes cluster was initialized with kubeadm, not
+`sealos run`. Sealos 5.1.1 rejects the existing Docker containerd during host
+checks, and the rootfs `check.bash` rejects Docker too. With no local `sealctl`,
+Sealos should fall back to SSH directory copying for the packaged Zot OCI
+layouts; that path and image-cri-shim pulling remain unverified.
+Do not run `sealos reset` against the old `default` record: it targets the
+previous 192.168.0.35 cluster and its cleanup scripts can remove Docker's
+containerd files. A Sealos-managed deployment on this shared host still needs
+runtime isolation and registry-format work.
+
 Rebuild from the repository root:
 
 ```bash

@@ -6,6 +6,14 @@
 
 基于现有 WIP Kubernetes 1.33 分支流程，构建并验证 Kubernetes `v1.37.1` 集群镜像，同时将宿主机 Sealos CLI 升级到 `v5.1.1`，完成本地部署和端到端验证。网络插件按用户要求使用 **Cilium**；下文 Flannel 的验证属于历史记录，不代表目标网络方案验收通过。
 
+## 当前结论（2026-10-27）
+
+宿主机上的 Kubernetes `v1.37.1` + Cilium 集群由 **kubeadm 手工重建**，节点和系统 Pod 当前 Ready，Pod 内 DNS/Service 烟测通过；这不等于 Sealos 部署成功。`sealos status` 仍读取旧 `default` 记录，目标节点为 `192.168.0.35`，并报告旧 image-cri-shim socket 不存在、旧 API 不可达。`sealos status --cluster kubernetes-v137-cilium` 报告该 Clusterfile 不存在。
+
+当前镜像及宿主机尚不具备直接执行 `sealos run` 的条件：Sealos 5.1.1 创建流程的 `ContainerdChecker` 对宿主机执行 `containerd --version`，检测到已安装的 Docker 共享 containerd 后拒绝创建；镜像内 `scripts/check.bash` 也会因 Docker 存在而退出。直接绕过检查会进入可能覆盖 Docker containerd 文件和服务的 rootfs 初始化脚本。后续需设计、构建并验证 Docker 共存模式，再运行真正的 `sealos run`；不能把现有手工集群登记为 Sealos 管理集群。
+
+Registry 路径仍待端到端验证：当前镜像的 `/registry` 是 Zot OCI layout。Sealos 在找到本地 `sealctl` 时优先用 distribution filesystem 临时 Registry 做 HTTP 同步，二者格式不兼容；但当前宿主机和镜像均没有可用的 `sealctl`，源码中的同步流程会回退到 SSH 目录复制，因此不能断言当前构建一定在这一阶段失败。此前只验证了 Zot 能直接读取包内 layout，没有验证 Sealos 的 SSH 回退和后续 image-cri-shim 拉取。
+
 ## 当前代码状态
 
 - 仓库：`sealos-cluster-image`
