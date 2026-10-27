@@ -2,6 +2,14 @@
 
 更新时间：2026-10-27
 
+## 新增可选 runc（镜像已构建，集群待验收）
+
+当前分支增加从上游固定提交 `d6d73eb8c60246978da649ffe75ce5c8bca8f856` 构建 runc `v1.3.4`，与已使用的 crun `v1.29.1` 一同打包。独立 containerd 保持 `v2.3.4`；新集群可在 Clusterfile 中设置 `SEALOS_OCI_RUNTIME=runc`，默认仍为 crun。
+
+2026-10-27 已构建 `bbzhu/kubernetes:v1.37.1`，镜像 ID `sha256:84c3e8fc2685f53b959912abbbaef705e224149b62e30723feaf6db8d9734452`，并通过 `sealos load` 导入 Sealos 镜像存储。Dockerfile 构建阶段及额外的 `docker run --network none` 均输出 `Image verification passed`；镜像内二进制为 kubelet `v1.37.1`、containerd `v2.3.4`、crun `1.29.1`、runc `1.3.4`。独立 containerd 配置能解析 crun/runc 两个 runtime 和 `runc` 默认选项。原 Docker 容器 ID、Docker PID `50997` 和共享 containerd PID `2396` 未变化，运行中节点保持 Ready。
+
+下面记录的镜像 ID `42a7c6f9e47f` 和 Sealos 部署验收属于此前的 crun 构建。新镜像已完成打包和离线校验，但尚未以 runc 默认值执行 `sealos apply` 或普通 Pod 烟测；现有集群仍运行旧 crun rootfs。
+
 ## 最新结果：Sealos 管理的 Kubernetes 1.37.1 集群
 
 2026-10-27 已在 `node01` 上从重置后的空集群执行 Sealos 5.1.1 `apply`，目标记录 `/root/.sealos/kubernetes-v137-cilium/Clusterfile` 为 `ApplyClusterSuccess`、`ClusterSuccess`。镜像 `bbzhu/kubernetes:v1.37.1` 的本地 ID 为 `sha256:42a7c6f9e47f20ec6406c72c3aff0d98ead27330a279992b7a53254471b79b93`。随后使用镜像内脚本安装 Cilium 1.20.4。构建补丁 `patches/sealos-v5.1.1-isolated-cri.patch` 支持 Docker 共存、独立 CRI 和 OCI layout 同步；Clusterfile 使用 `SEALOS_ISOLATED_CRI=true`。

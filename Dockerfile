@@ -5,6 +5,7 @@ ARG BASE_IMAGE=docker.io/rockylinux/rockylinux:10.2.20260525.0
 ARG INST_KUBERNETES_V=v1.37.1
 ARG INST_CONTAINERD_V=v2.3.4
 ARG INST_CRUN_V=v1.29.1
+ARG INST_RUNC_V=v1.3.4
 ARG INST_ZOT_V=v2.1.20
 ARG INST_SEALOS_V=v5.1.1
 ARG INST_CRI_TOOLS_V=v1.36.0
@@ -13,6 +14,14 @@ ARG INST_CILIUM_V=1.20.4
 FROM ghcr.io/cpaas-dev/kluster-vendor-kubernetes:${INST_KUBERNETES_V} AS kubernetes
 FROM ghcr.io/cpaas-dev/kluster-vendor-containerd:${INST_CONTAINERD_V} AS containerd
 FROM ghcr.io/cpaas-dev/kluster-vendor-crun:${INST_CRUN_V} AS crun
+FROM docker.io/golang:1.23.7-bookworm AS runc
+ARG INST_RUNC_V
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git libseccomp-dev make pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone --depth 1 --branch "${INST_RUNC_V}" https://github.com/opencontainers/runc.git /build/runc \
+    && cd /build/runc \
+    && test "$(git rev-parse HEAD)" = d6d73eb8c60246978da649ffe75ce5c8bca8f856 \
+    && make static
 FROM ghcr.io/cpaas-dev/kluster-vendor-zot:${INST_ZOT_V} AS zot
 FROM ghcr.io/cpaas-dev/kluster-vendor-sealos:${INST_SEALOS_V} AS sealos
 FROM ghcr.io/cpaas-dev/kluster-vendor-cri-tools:${INST_CRI_TOOLS_V} AS cri-tools
@@ -89,6 +98,7 @@ COPY --from=containerd \
 COPY --from=crun \
     /cpaas/vendor/crun/crun \
     /bin/
+COPY --from=runc /build/runc/runc /bin/runc
 
 COPY --from=zot \
     /cpaas/vendor/zot/zot \

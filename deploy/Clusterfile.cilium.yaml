@@ -13,6 +13,7 @@ spec:
     - bbzhu/kubernetes:v1.37.1
   env:
     - SEALOS_ISOLATED_CRI=true
+    - SEALOS_OCI_RUNTIME=crun
   ssh: {}
 ---
 apiVersion: kubeadm.k8s.io/v1beta4

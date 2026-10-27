@@ -37,6 +37,13 @@ runtime in that mode. `patches/sealos-v5.1.1-isolated-cri.patch` updates Sealos
 5.1.1 host checks, CRI selection and OCI-layout registry sync. The complete
 CLI build command is in the repository README.
 
+The updated image packages containerd 2.3.4, crun 1.29.1 and optional runc
+1.3.4. The image build and offline checks passed; a cluster using runc as its
+default runtime still needs deployment validation.
+`SEALOS_OCI_RUNTIME=crun` is the validated default in the Clusterfile. For a
+new cluster, change it to `SEALOS_OCI_RUNTIME=runc` before `sealos apply`; the
+isolated containerd then selects runc without changing Docker's runtime.
+
 `sealos apply -f deploy/Clusterfile.cilium.yaml` creates the named cluster.
 After the API and kube-proxy are available, run `deploy/cilium-install.sh`.
 Inspect it with `sealos status --cluster kubernetes-v137-cilium` and

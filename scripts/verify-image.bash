@@ -3,6 +3,10 @@ set -euo pipefail
 
 [[ $(kubelet --version) == 'Kubernetes v1.37.1' ]]
 [[ $(kubeadm version -o short) == 'v1.37.1' ]]
+kubectl version --client=true -o yaml | grep -q 'gitVersion: v1.37.1'
+[[ $(containerd --version) == *' v2.3.4 '* ]]
+[[ $(runc --version | head -n 1) == 'runc version 1.3.4' ]]
+[[ $(crun --version | head -n 1) == 'crun version 1.29.1' ]]
 containerd --config /etc/config.toml config dump > /tmp/verified-containerd.toml
 grep -q "default_runtime_name = 'crun'" /tmp/verified-containerd.toml
 grep -q "sandbox = 'registry.k8s.io/pause:3.10.2'" /tmp/verified-containerd.toml
@@ -13,6 +17,8 @@ grep -q "address = '/run/containerd-v137/containerd.sock.ttrpc'" /tmp/verified-c
 grep -q "runtime_path = '/opt/sealos-v137/bin/containerd-shim-runc-v2'" /tmp/verified-containerd-v137.toml
 grep -q "config_path = '/etc/containerd-v137/certs.d'" /tmp/verified-containerd-v137.toml
 grep -q "sandbox = 'sealos.hub:5000/pause:3.10.2'" /tmp/verified-containerd-v137.toml
+grep -q "default_runtime_name = 'crun'" /tmp/verified-containerd-v137.toml
+grep -q "BinaryName = '/opt/sealos-v137/bin/runc'" /tmp/verified-containerd-v137.toml
 
 # Exercise the registry from the packaged files without an upstream registry.
 config='{"storage":{"rootDirectory":"/registry","gc":false,"dedupe":false},"http":{"address":"127.0.0.1","port":15000},"log":{"level":"error"}}'

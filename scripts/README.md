@@ -40,6 +40,9 @@ instead runs `isolated-init.bash`. It installs the image binaries under
 `/opt/sealos-v137/bin`, starts `containerd-v137` and `image-cri-shim-v137`, and
 configures kubelet for `/run/containerd-v137/containerd.sock`. In this mode,
 `init.bash` does nothing; the shared Docker containerd is left in place.
+Both crun and runc are installed. `SEALOS_OCI_RUNTIME=crun` is the default;
+setting `SEALOS_OCI_RUNTIME=runc` in the Clusterfile before installation selects
+runc for the dedicated containerd. Other values are rejected.
 
 ## clean
 

@@ -25,3 +25,9 @@ imports = []
       [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.crun.options]
         BinaryName = "/opt/sealos-v137/bin/crun"
         SystemdCgroup = true
+    [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runc]
+      runtime_type = "io.containerd.runc.v2"
+      runtime_path = "/opt/sealos-v137/bin/containerd-shim-runc-v2"
+      [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runc.options]
+        BinaryName = "/opt/sealos-v137/bin/runc"
+        SystemdCgroup = true
