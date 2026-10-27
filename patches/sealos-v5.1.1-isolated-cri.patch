@@ -1,0 +1,75 @@
+diff --git a/lifecycle/pkg/checker/host_checker.go b/lifecycle/pkg/checker/host_checker.go
+--- a/lifecycle/pkg/checker/host_checker.go
++++ b/lifecycle/pkg/checker/host_checker.go
+@@ -124,6 +124,18 @@ func (a ContainerdChecker) Check(cluster *v2.Cluster, _ string) error {
+ 	if err != nil {
+ 		return err
+ 	}
++	for _, setting := range cluster.Spec.Env {
++		if setting != "SEALOS_ISOLATED_CRI=true" {
++			continue
++		}
++		for _, ip := range ipList {
++			_, err := execer.Cmd(ip, "if systemctl is-active --quiet containerd-v137; then systemctl show -p ExecStart --value containerd-v137 | grep -Fq '/opt/sealos-v137/bin/containerd --config /etc/containerd-v137/config.toml'; fi")
++			if err != nil {
++				return fmt.Errorf("conflicting containerd-v137 service on %s: %w", ip, err)
++			}
++		}
++		return nil
++	}
+ 	return checkContainerd(execer, ipList)
+ }
+ 
+diff --git a/lifecycle/pkg/runtime/kubernetes/kubeadm.go b/lifecycle/pkg/runtime/kubernetes/kubeadm.go
+--- a/lifecycle/pkg/runtime/kubernetes/kubeadm.go
++++ b/lifecycle/pkg/runtime/kubernetes/kubeadm.go
+@@ -93,6 +93,11 @@ func gte(v1, v2 *semver.Version) bool {
+ }
+ 
+ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
++	for _, setting := range k.cluster.Spec.Env {
++		if setting == "SEALOS_ISOLATED_CRI=true" {
++			return "systemd", nil
++		}
++	}
+ 	driver, err := k.remoteUtil.CGroup(node)
+ 	if err != nil {
+ 		return "", err
+@@ -424,6 +429,11 @@ func (k *KubeadmRuntime) getEtcdDataDir() string {
+ }
+ 
+ func (k *KubeadmRuntime) getCRISocket(node string) (string, error) {
++	for _, setting := range k.cluster.Spec.Env {
++		if setting == "SEALOS_ISOLATED_CRI=true" {
++			return "/run/containerd-v137/containerd.sock", nil
++		}
++	}
+ 	criSocket, err := k.remoteUtil.Socket(node)
+ 	if err != nil {
+ 		return "", err
+diff --git a/lifecycle/pkg/filesystem/registry/sync.go b/lifecycle/pkg/filesystem/registry/sync.go
+--- a/lifecycle/pkg/filesystem/registry/sync.go
++++ b/lifecycle/pkg/filesystem/registry/sync.go
+@@ -69,6 +69,22 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
+ 	if shouldSkip(s.mounts) {
+ 		return nil
+ 	}
++	for _, mount := range s.mounts {
++		if mount.Env["SEALOS_REGISTRY_LAYOUT"] != "oci" {
++			continue
++		}
++		for _, host := range hosts {
++			for _, source := range s.mounts {
++				registryDir := filepath.Join(source.MountPoint, constants.RegistryDirName)
++				if file.IsDir(registryDir) {
++					if err := syncViaSSH(ctx, s, host, registryDir); err != nil {
++						return err
++					}
++				}
++			}
++		}
++		return nil
++	}
+ 	logger.Info("trying default http mode to sync images to hosts %v", hosts)
+ 	// run `sealctl registry serve` to start a temporary registry
+ 	for i := range hosts {

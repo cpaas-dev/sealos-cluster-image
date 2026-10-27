@@ -1,0 +1,12 @@
+[Unit]
+Description=Sealos Kubernetes v1.37 containerd
+After=network.target
+
+[Service]
+ExecStart=/opt/sealos-v137/bin/containerd --config /etc/containerd-v137/config.toml
+Restart=always
+Delegate=yes
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

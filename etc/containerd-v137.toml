@@ -1,0 +1,27 @@
+version = 4
+root = "/var/lib/containerd-v137"
+state = "/run/containerd-v137"
+imports = []
+
+[plugins."io.containerd.server.v1.grpc"]
+  address = "/run/containerd-v137/containerd.sock"
+
+[plugins."io.containerd.server.v1.ttrpc"]
+  address = "/run/containerd-v137/containerd.sock.ttrpc"
+
+[plugins."io.containerd.cri.v1.images"]
+  [plugins."io.containerd.cri.v1.images".pinned_images]
+    sandbox = "sealos.hub:5000/pause:3.10.2"
+  [plugins."io.containerd.cri.v1.images".registry]
+    config_path = "/etc/containerd-v137/certs.d"
+
+[plugins."io.containerd.cri.v1.runtime"]
+  disable_apparmor = true
+  [plugins."io.containerd.cri.v1.runtime".containerd]
+    default_runtime_name = "crun"
+    [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.crun]
+      runtime_type = "io.containerd.runc.v2"
+      runtime_path = "/opt/sealos-v137/bin/containerd-shim-runc-v2"
+      [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.crun.options]
+        BinaryName = "/opt/sealos-v137/bin/crun"
+        SystemdCgroup = true

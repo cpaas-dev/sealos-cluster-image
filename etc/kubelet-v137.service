@@ -1,0 +1,15 @@
+[Unit]
+Description=Sealos Kubernetes v1.37 kubelet
+After=containerd-v137.service
+Requires=containerd-v137.service
+
+[Service]
+ExecStart=/opt/sealos-v137/bin/kubelet --config=/var/lib/kubelet/config.yaml --kubeconfig=/etc/kubernetes/kubelet.conf --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --container-runtime-endpoint=unix:///run/containerd-v137/containerd.sock
+Restart=always
+RestartSec=10
+KillMode=process
+Delegate=yes
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

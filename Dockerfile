@@ -41,8 +41,9 @@ RUN mkdir -p /registry && while read -r image; do \
 
 FROM ${BASE_IMAGE}
 
-RUN mkdir -p /bin /etc /images/shim /registry /scripts
+RUN mkdir -p /bin /etc /images/shim /registry /scripts /statics
 COPY scripts /scripts
+COPY statics /statics
 COPY kubernetes/bin/kubelet-*.sh /scripts/
 COPY cri-tools/crictl.yaml /etc/crictl.yaml
 COPY etc /etc
@@ -94,9 +95,8 @@ COPY --from=zot \
     /cpaas/vendor/zot/zli \
     /bin/
 
-COPY --from=sealos \
-    /cpaas/vendor/sealos/image-cri-shim \
-    /bin/
+COPY --from=sealos /cpaas/vendor/sealos/image-cri-shim /bin/
+COPY --from=sealos /cpaas/vendor/sealos/sealctl /opt/sealctl
 
 RUN bash /scripts/verify-image.bash
 
@@ -105,7 +105,7 @@ ENV \
     sandboxImage=pause:3.10.2
 
 ENV \
-    criData=/var/lib/containerd \
+    criData=/var/lib/containerd-v137 \
     \
     registryData=/var/lib/registry \
     registryConfig=/etc/registry \
@@ -116,8 +116,9 @@ ENV \
     \
     disableApparmor=false \
     \
-    SEALOS_SYS_CRI_ENDPOINT=/var/run/containerd/containerd.sock \
-    SEALOS_SYS_IMAGE_ENDPOINT=/var/run/image-cri-shim.sock
+    SEALOS_SYS_CRI_ENDPOINT=/run/containerd-v137/containerd.sock \
+    SEALOS_SYS_IMAGE_ENDPOINT=/run/image-cri-shim-v137.sock \
+    SEALOS_REGISTRY_LAYOUT=oci
 
 LABEL \
     sealos.io.type=rootfs \
@@ -126,9 +127,9 @@ LABEL \
     image=ghcr.io/labring/lvscare:${INST_SEALOS_V}
 
 LABEL \
-    init="bash cri-init.bash \$registryDomain \$registryPort && bash init.bash" \
-    clean="bash clean.bash && bash cri-clean.bash \$criData" \
-    check="bash check.bash \$registryData" \
-    init-registry="bash registry-init.bash \$registryData \$registryConfig" \
-    clean-registry="bash registry-clean.bash \$registryData \$registryConfig" \
+    init="cri-init.bash \$registryDomain \$registryPort && bash init.bash" \
+    clean="clean.bash && bash cri-clean.bash \$criData" \
+    check="check.bash \$registryData" \
+    init-registry="registry-init.bash \$registryData \$registryConfig" \
+    clean-registry="registry-clean.bash \$registryData \$registryConfig" \
     vip="\$defaultVIP"

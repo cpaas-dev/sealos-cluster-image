@@ -17,6 +17,10 @@
 BASEDIR=$(cd "$(dirname "$0")" || exit; pwd)
 source "${BASEDIR}/common.bash"
 
+if [[ ${SEALOS_ISOLATED_CRI:-} == true ]]; then
+    exec bash "${BASEDIR}/isolated-init.bash"
+fi
+
 readonly REG_DOMAIN=${1:-sealos.hub}
 readonly REG_PORT=${2:-5000}
 

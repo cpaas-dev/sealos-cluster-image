@@ -6,13 +6,20 @@ set -euo pipefail
 containerd --config /etc/config.toml config dump > /tmp/verified-containerd.toml
 grep -q "default_runtime_name = 'crun'" /tmp/verified-containerd.toml
 grep -q "sandbox = 'registry.k8s.io/pause:3.10.2'" /tmp/verified-containerd.toml
+containerd --config /etc/containerd-v137.toml config dump > /tmp/verified-containerd-v137.toml
+grep -q "root = '/var/lib/containerd-v137'" /tmp/verified-containerd-v137.toml
+grep -q "address = '/run/containerd-v137/containerd.sock'" /tmp/verified-containerd-v137.toml
+grep -q "address = '/run/containerd-v137/containerd.sock.ttrpc'" /tmp/verified-containerd-v137.toml
+grep -q "runtime_path = '/opt/sealos-v137/bin/containerd-shim-runc-v2'" /tmp/verified-containerd-v137.toml
+grep -q "config_path = '/etc/containerd-v137/certs.d'" /tmp/verified-containerd-v137.toml
+grep -q "sandbox = 'sealos.hub:5000/pause:3.10.2'" /tmp/verified-containerd-v137.toml
 
 # Exercise the registry from the packaged files without an upstream registry.
 config='{"storage":{"rootDirectory":"/registry","gc":false,"dedupe":false},"http":{"address":"127.0.0.1","port":15000},"log":{"level":"error"}}'
 printf '%s\n' "$config" > /tmp/verify-zot.json
 zot serve /tmp/verify-zot.json > /tmp/verify-zot.log 2>&1 &
 zot_pid=$!
-trap 'kill "$zot_pid" 2>/dev/null || true; wait "$zot_pid" 2>/dev/null || true; rm -f /tmp/verified-containerd.toml /tmp/verify-zot.json /tmp/verify-zot.log' EXIT
+trap 'kill "$zot_pid" 2>/dev/null || true; wait "$zot_pid" 2>/dev/null || true; rm -f /tmp/verified-containerd.toml /tmp/verified-containerd-v137.toml /tmp/verify-zot.json /tmp/verify-zot.log' EXIT
 for attempt in {1..30}; do
   if curl --noproxy '*' --silent --fail http://127.0.0.1:15000/v2/ > /dev/null; then
     break

@@ -2,17 +2,25 @@
 
 更新时间：2026-10-27
 
+## 最新结果：Sealos 管理的 Kubernetes 1.37.1 集群
+
+2026-10-27 已在 `node01` 上从重置后的空集群执行 Sealos 5.1.1 `apply`，目标记录 `/root/.sealos/kubernetes-v137-cilium/Clusterfile` 为 `ApplyClusterSuccess`、`ClusterSuccess`。镜像 `bbzhu/kubernetes:v1.37.1` 的本地 ID 为 `sha256:42a7c6f9e47f20ec6406c72c3aff0d98ead27330a279992b7a53254471b79b93`。随后使用镜像内脚本安装 Cilium 1.20.4。构建补丁 `patches/sealos-v5.1.1-isolated-cri.patch` 支持 Docker 共存、独立 CRI 和 OCI layout 同步；Clusterfile 使用 `SEALOS_ISOLATED_CRI=true`。
+
+宿主机 `/usr/local/bin/sealos` 已安装补丁版 5.1.1，SHA256 为 `0941d1c4e106e6e165f92f9e197bebfe1e971fb109f08eeb494c5bde4957208e`；原 vendor 版保存在 `/tmp/sealos-v5.1.1-vendor.bin`。用正式路径再次执行 `sealos status --cluster kubernetes-v137-cilium` 成功。
+
+实测 `node01 Ready`、Kubernetes Server `v1.37.1`、API `/readyz=ok`。`sealos status --cluster kubernetes-v137-cilium` 报告节点 1/1 Ready、系统 Pod 10/10 Running、Service 全部健康；Cilium agent、Envoy、operator、两个 CoreDNS 和控制平面均 Ready，无 Flannel DaemonSet。两个普通 `nginx:alpine` Pod 从独立 CRI 启动，客户端通过 DNS 将 `web.v137-sealos-smoke.svc.cluster.local` 解析到 `10.120.213.110`，通过 ClusterIP 和服务端 Pod IP `10.244.0.218` 均取得 nginx 页面；`kubernetes.default.svc.cluster.local` 解析到 `10.120.0.1`。测试 namespace 已删除。
+
+Docker 容器 ID 与重置前基线完全一致，Docker PID `50997`、共享 containerd PID `2396` 未变化。Sealos status 的 registry/shim 配置详情仍显示部分旧默认值，需以目标 Clusterfile、独立 CRI 镜像列表、systemd 和实际工作负载为准。当前只完成单节点验收，尚未做宿主机重启和多节点测试；Cilium 1.20.4 官方兼容矩阵尚未列 Kubernetes 1.37。旧 `default` Clusterfile 指向 `192.168.0.35`，不得对它执行 `sealos reset`。
+
 ## 目标
 
 基于现有 WIP Kubernetes 1.33 分支流程，构建并验证 Kubernetes `v1.37.1` 集群镜像，同时将宿主机 Sealos CLI 升级到 `v5.1.1`，完成本地部署和端到端验证。网络插件按用户要求使用 **Cilium**；下文 Flannel 的验证属于历史记录，不代表目标网络方案验收通过。
 
 ## 当前结论（2026-10-27）
 
-宿主机上的 Kubernetes `v1.37.1` + Cilium 集群由 **kubeadm 手工重建**，节点和系统 Pod 当前 Ready，Pod 内 DNS/Service 烟测通过；这不等于 Sealos 部署成功。`sealos status` 仍读取旧 `default` 记录，目标节点为 `192.168.0.35`，并报告旧 image-cri-shim socket 不存在、旧 API 不可达。`sealos status --cluster kubernetes-v137-cilium` 报告该 Clusterfile 不存在。
+Sealos `apply` 已完整经过 Check、PreProcess、MountRootfs、MirrorRegistry、Bootstrap、Init、Join 和 RunGuest，目标集群状态为 `ClusterSuccess`。离线镜像通过 Zot、image-cri-shim 和独立 containerd 拉取，普通 Pod 的 DNS、ClusterIP 与 Pod IP 访问通过。创建日志在 `/tmp/sealos-v137-apply.log`；Docker 重置前基线在 `/opt/sealos-v137-next/validation/sealos-reset/docker-before.txt`。
 
-当前镜像及宿主机尚不具备直接执行 `sealos run` 的条件：Sealos 5.1.1 创建流程的 `ContainerdChecker` 对宿主机执行 `containerd --version`，检测到已安装的 Docker 共享 containerd 后拒绝创建；镜像内 `scripts/check.bash` 也会因 Docker 存在而退出。直接绕过检查会进入可能覆盖 Docker containerd 文件和服务的 rootfs 初始化脚本。后续需设计、构建并验证 Docker 共存模式，再运行真正的 `sealos run`；不能把现有手工集群登记为 Sealos 管理集群。
-
-Registry 路径仍待端到端验证：当前镜像的 `/registry` 是 Zot OCI layout。Sealos 在找到本地 `sealctl` 时优先用 distribution filesystem 临时 Registry 做 HTTP 同步，二者格式不兼容；但当前宿主机和镜像均没有可用的 `sealctl`，源码中的同步流程会回退到 SSH 目录复制，因此不能断言当前构建一定在这一阶段失败。此前只验证了 Zot 能直接读取包内 layout，没有验证 Sealos 的 SSH 回退和后续 image-cri-shim 拉取。
+以下章节保留早期镜像构建、手工 kubeadm 部署和问题排查记录；其中“尚未验收”“当前 Flannel”等表述仅描述当时阶段，不代表本节的最终状态。
 
 ## 当前代码状态
 
@@ -148,7 +156,7 @@ CRI 和基础工作负载验证通过
 - 构建阶段 Skopeo 访问 `registry.k8s.io` 需要显式 BuildKit proxy 参数；本次使用宿主机现有代理完成，代理没有写入最终镜像。
 - 2026-10-26 当时宿主机仍运行 Flannel；2026-10-27 已重建为 Cilium，详见下文。Cilium 安装脚本会主动拒绝在检测到 Flannel 时继续。
 
-剩余计划：验证新集群的 Pod 内 DNS、ClusterIP 与 Pod 连通性，处理 Sealos registry sync 与 Zot OCI layout 的适配并验证 `sealos run`。
+上述 Pod 网络和 Sealos 镜像同步路径已在本次 `sealos apply` 中验证。剩余验收为重启恢复、多节点和 Cilium/Kubernetes 1.37 官方兼容性确认。
 
 Cilium `1.20.4` 官方兼容矩阵列出 Kubernetes `1.33` 至 `1.36`，未列出 `1.37`。本包以最新稳定版进行验证候选，不宣称官方支持已覆盖 `1.37`。参考：`https://github.com/cilium/cilium/blob/v1.20.4/Documentation/network/kubernetes/compatibility.rst`。
 

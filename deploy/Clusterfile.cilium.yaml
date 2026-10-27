@@ -11,4 +11,22 @@ spec:
         - amd64
   image:
     - bbzhu/kubernetes:v1.37.1
+  env:
+    - SEALOS_ISOLATED_CRI=true
   ssh: {}
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+nodeRegistration:
+  criSocket: unix:///run/containerd-v137/containerd.sock
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+networking:
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.120.0.0/16
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+containerRuntimeEndpoint: unix:///run/containerd-v137/containerd.sock
+imageServiceEndpoint: unix:///run/image-cri-shim-v137.sock

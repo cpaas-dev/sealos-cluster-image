@@ -1,0 +1,12 @@
+[Unit]
+Description=Sealos Kubernetes v1.37 image CRI shim
+After=network-online.target containerd-v137.service
+Requires=containerd-v137.service
+
+[Service]
+ExecStart=/opt/sealos-v137/bin/image-cri-shim --file=/etc/image-cri-shim-v137.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

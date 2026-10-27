@@ -1,0 +1,9 @@
+shim: /run/image-cri-shim-v137.sock
+cri: /run/containerd-v137/containerd.sock
+address: http://sealos.hub:5000
+force: true
+debug: false
+image: /var/lib/image-cri-shim-v137
+timeout: 15m
+reloadInterval: 15s
+auth: admin:passw0rd

@@ -36,7 +36,7 @@ for entry in "${INSTALL_FILES[@]}"; do
     install -Dm"${mode}" -t "$dest" "$src"
 done
 
-if [ -s /etc/selinux/config ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
+if [[ ${SEALOS_ISOLATED_CRI:-} != true ]] && [ -s /etc/selinux/config ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
     sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/selinux/config
     setenforce 0
 fi

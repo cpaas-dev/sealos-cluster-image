@@ -17,6 +17,10 @@
 BASEDIR=$(cd "$(dirname "$0")" || exit; pwd)
 source "${BASEDIR}/common.bash"
 
+if [[ ${SEALOS_ISOLATED_CRI:-} == true ]]; then
+    exec bash "${BASEDIR}/isolated-clean.bash"
+fi
+
 bash "${BASEDIR}/kube-clean.bash"
 
 logger "clean kube success"

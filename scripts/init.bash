@@ -17,6 +17,10 @@
 BASEDIR=$(cd "$(dirname "$0")" || exit; pwd)
 source "${BASEDIR}/common.bash"
 
+if [[ ${SEALOS_ISOLATED_CRI:-} == true ]]; then
+    exit 0
+fi
+
 if ! bash kube-init.bash; then
     error "====init kubelet failed!===="
 fi

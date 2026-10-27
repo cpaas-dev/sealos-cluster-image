@@ -19,6 +19,10 @@ source "${BASEDIR}/common.bash"
 
 readonly CTD_STORAGE=${1:-/var/lib/containerd}
 
+if [[ ${SEALOS_ISOLATED_CRI:-} == true ]]; then
+    exit 0
+fi
+
 if ! bash "${BASEDIR}/containerd-clean.sh" "$CTD_STORAGE"; then
     error "====clean containerd failed!===="
 fi
