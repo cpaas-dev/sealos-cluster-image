@@ -6,7 +6,7 @@
 
 ## 1. 准备离线制品和工具
 
-在已构建的 node01，制品路径是 `/mnt/data/k8s-artifacts`：
+在已构建的 node01，制品路径是 `/mnt/data/k8s-artifacts`。**远端离线传输需两份归档、一份 Clusterfile 模板和一份校验文件**：`kubernetes-v1.37.1-k8s-only.tar`（约 1.7 GB）、`cilium-1.20.4-helm-images-tools-linux-amd64.tar`（约 758 MB）、`Clusterfile.cilium.yaml`、`OFFLINE-ARCHIVES-SHA256SUMS`。第二份 tar 是未压缩包，内含 Cilium Helm Chart、values、agent/operator/Envoy 的 OCI 镜像、Helm 3.21.3、补丁版 Sealos CLI 和备用 skopeo 工具镜像；它**不依赖 Docker Hub 才能安装**。
 
 | 文件 | 用途 / 校验 |
 | --- | --- |
@@ -17,10 +17,12 @@
 | `tools/skopeo-stable-v1.21.0.tar` | 本机无原生 skopeo 时，可 `docker load` 的离线工具镜像；`tools/SHA256SUMS` 校验 |
 | `sealos-cluster-image/deploy/Clusterfile.cilium.yaml` | 部署清单模板；需根据实际测试节点改 SSH IP、唯一集群名和网段 |
 
-将上述制品及 Clusterfile 模板**完整复制到目标节点**，不需要目标节点访问外网。下文约定制品仍在 `/mnt/data/k8s-artifacts`，仓库仍在当前工作目录 `sealos-cluster-image/`；其他目录请替换路径。先校验，失败就停下，不要部署损坏制品：
+将上述**四个文件**复制到目标节点（U 盘、内网 scp 等），不需要目标节点访问外网。下文约定制品仍在 `/mnt/data/k8s-artifacts`；其他目录请替换路径，**目标节点无需 Git 仓库**。**在目标节点**先校验归档再解包，随后校验包内文件；失败就停下，不要部署损坏制品：
 
 ```bash
 KIT=/mnt/data/k8s-artifacts
+(cd "$KIT" && sha256sum -c OFFLINE-ARCHIVES-SHA256SUMS)
+tar -xf "$KIT/cilium-1.20.4-helm-images-tools-linux-amd64.tar" -C "$KIT"
 printf '%s  %s\n' 5fafec7b70c821220f9fcced1767601c69c67e61db748e503cc7f105af2c2917 \
   "$KIT/kubernetes-v1.37.1-k8s-only.tar" | sha256sum -c -
 (cd "$KIT/tools" && sha256sum -c SHA256SUMS)
@@ -51,7 +53,7 @@ ls -ld /etc/kubernetes /var/lib/etcd /var/lib/containerd-v137 \
 - 可用 `ssh -o BatchMode=yes root@<目标 IP> hostname` 确认免密 SSH。检查 Clusterfile 的 `spec.hosts`、集群名及 `spec.env`；不要把 `default` 当新集群名。下面命令**只用于新节点**：
 
 ```bash
-cp sealos-cluster-image/deploy/Clusterfile.cilium.yaml /tmp/Clusterfile.k8s-only.yaml
+cp "$KIT/Clusterfile.cilium.yaml" /tmp/Clusterfile.k8s-only.yaml
 # 编辑 /tmp/Clusterfile.k8s-only.yaml：metadata.name 唯一、目标 IP:22、网段不冲突；
 # 保留 spec.image 仅有 bbzhu/kubernetes:v1.37.1-k8s-only，
 # SEALOS_ISOLATED_CRI=true、SEALOS_OCI_RUNTIME=runc 和独立 CRI socket。
