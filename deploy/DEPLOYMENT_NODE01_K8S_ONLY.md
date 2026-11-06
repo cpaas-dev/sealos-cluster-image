@@ -5,7 +5,7 @@
 ## 操作与构建
 
 - 旧 `containerd-v137` 服务已停止但留下 18 个 `/kubepods.slice` 进程和 10 个专用 shim（包括占用 6443 的 apiserver）。只对这些明确归属于独立 CRI 的进程发送 TERM；未清理共享 containerd、Docker 或全局 iptables。Docker 运行容器前后均为原来的 **26 个 ID**，`docker.service` 和共享 `containerd.service` 均为 active。
-- `sealos load` 导入 `bbzhu/kubernetes:v1.37.1-k8s-only`，最终镜像 ID `sha256:de57e834d9388ecc913c228dcfb724d0886bf1b60d7c5e54f05e673c92086183`，镜像内离线校验通过。构建时上游 `registry.k8s.io` 超时，因此从本地旧镜像**只**复用了 kube-proxy/CoreDNS OCI 布局，未复制 Cilium。
+- `sealos load` 导入 `bbzhu/kubernetes:v1.37.1-k8s-only`，最终镜像 ID `sha256:de57e834d9388ecc913c228dcfb724d0886bf1b60d7c5e54f05e673c92086183`，镜像内离线校验通过。构建时上游 `registry.k8s.io` 超时，因此从本地旧镜像**只**复用了 kube-proxy/CoreDNS OCI 布局，未复制 Cilium。镜像现保存在 node01 的 Docker、Sealos 存储和 `/mnt/data/k8s-artifacts/kubernetes-v1.37.1-k8s-only.tar`；尝试推送同标签到 Docker Hub 返回 `denied: requested access to the resource is denied`，**远端镜像尚未发布**，离线安装须用 tar 执行 `sealos load`。
 - 首次 `sealos apply -f deploy/Clusterfile.cilium.yaml` 因独立 `image-cri-shim-v137.sock` 尚未创建就执行 CRI pull 而失败。仅 `sealos reset --cluster kubernetes-v137-k8sonly --force` 清理了这次失败的新集群。`scripts/isolated-init.bash` 加入 CRI 就绪等待后重建、重新 load 并 apply，第二次成功。
 - K8s `v1.37.1`，独立 containerd `2.3.4` 默认 runc；API `/readyz` 为 `ok`，kube-proxy Running，PodCIDR `10.244.0.0/24`，ServiceCIDR `10.120.0.0/16`。
 
