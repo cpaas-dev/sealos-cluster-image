@@ -50,15 +50,27 @@ ls -ld /etc/kubernetes /var/lib/etcd /var/lib/containerd-v137 \
 
 - 先确认 Pod 网段 `10.244.0.0/16`、Service 网段 `10.120.0.0/16` **与现有 Docker 网络和主机路由不重叠**（`ip -4 route`、`docker network ls`）；根分区留足空间，**避免 DiskPressure**。node01 曾因根分区仅剩约 30 GB 而无法调度，迁走旧构建临时文件后约剩 37 GB 才恢复；不要清理 Docker 数据来腾空间。
 - **若 6443 已占用、存在有效 `/etc/kubernetes/admin.conf` 或目标集群记录已存在，停下确认归属，不要重跑 `sealos apply`。** 旧 Sealos `default` 记录指向 `192.168.0.35`，**不得对它执行 reset**。node01 旧隔离 CRI 的遗留 Pod/shim 已在获授权后按 cgroup 精确清理；其他节点不得照搬 PID 或执行无范围的 `pkill`、`kubeadm reset`、`iptables -F`、`docker prune`。
-- 可用 `ssh -o BatchMode=yes root@<目标 IP> hostname` 确认免密 SSH。检查 Clusterfile 的 `spec.hosts`、集群名及 `spec.env`；不要把 `default` 当新集群名。下面命令**只用于新节点**：
+- 可用 `ssh -o BatchMode=yes root@<目标 IP> hostname` 确认免密 SSH。**`sealos gen` 会探测目标 SSH/架构**，若探测失败，不要只依据“默认 amd64”的警告继续部署。先 `gen`，再修改生成的多文档 Clusterfile，最后 `apply`；不要把旧 `default` 当新集群名。下面命令**只用于新节点**：
 
 ```bash
-cp "$KIT/Clusterfile.cilium.yaml" /tmp/Clusterfile.k8s-only.yaml
-# 编辑 /tmp/Clusterfile.k8s-only.yaml：metadata.name 唯一、目标 IP:22、网段不冲突；
-# 保留 spec.image 仅有 bbzhu/kubernetes:v1.37.1-k8s-only，
-# SEALOS_ISOLATED_CRI=true、SEALOS_OCI_RUNTIME=runc 和独立 CRI socket。
+read -r -p '新节点 IP（不要填旧 default 集群 IP）: ' MASTER_IP
+read -r -p '唯一新集群名（不要填 default）: ' CLUSTER_NAME
+sealos gen bbzhu/kubernetes:v1.37.1-k8s-only \
+  --cluster "$CLUSTER_NAME" --masters "$MASTER_IP" \
+  -e SEALOS_ISOLATED_CRI=true -e SEALOS_OCI_RUNTIME=runc \
+  -o /tmp/Clusterfile.k8s-only.yaml
 ${EDITOR:-vi} /tmp/Clusterfile.k8s-only.yaml
 ```
+
+`gen` 生成的默认值**不适合直接用于本隔离 CRI 部署**。修改其**已有**的 YAML 文档（不要重复追加同 kind 对象），对照随离线包交付且已验证的 `$KIT/Clusterfile.cilium.yaml`：
+
+- `Cluster`：`metadata.name`、`spec.hosts`、`spec.image`（离线 tar 标签必须是 `bbzhu/kubernetes:v1.37.1-k8s-only`），以及 `SEALOS_ISOLATED_CRI=true`、`SEALOS_OCI_RUNTIME=runc`。
+- `InitConfiguration`：`nodeRegistration.criSocket: unix:///run/containerd-v137/containerd.sock`。
+- `ClusterConfiguration`：选择不冲突的 `networking.podSubnet` 和 `networking.serviceSubnet`；node01 已验收的值分别为 `10.244.0.0/16` 和 `10.120.0.0/16`。
+- `KubeletConfiguration`：`cgroupDriver: systemd`、`containerRuntimeEndpoint: unix:///run/containerd-v137/containerd.sock`、`imageServiceEndpoint: unix:///run/image-cri-shim-v137.sock`。实测 `sealos gen` 默认输出的是 `cgroupfs` 和共享 `/run/containerd/containerd.sock`，不修改会选错运行时。
+- `KubeProxyConfiguration`：本次验证使用 kube-proxy，建议将生成文件的 `mode: ipvs` 改为 `mode: iptables`，与已验收配置保持一致。
+
+若不需要保留 `gen` 自动生成的其他配置，也可以直接复制 `$KIT/Clusterfile.cilium.yaml`，**只**修改新节点 IP、唯一集群名及网段；不要在已有部分初始化记录上重复 apply。
 
 ## 3. 离线导入 Kubernetes 镜像并执行 Sealos
 
