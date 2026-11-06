@@ -1,7 +1,7 @@
 apiVersion: apps.sealos.io/v1beta1
 kind: Cluster
 metadata:
-  name: kubernetes-v137-cilium
+  name: kubernetes-v137-k8sonly
 spec:
   hosts:
     - ips:
@@ -10,10 +10,10 @@ spec:
         - master
         - amd64
   image:
-    - bbzhu/kubernetes:v1.37.1
+    - bbzhu/kubernetes:v1.37.1-k8s-only
   env:
     - SEALOS_ISOLATED_CRI=true
-    - SEALOS_OCI_RUNTIME=crun
+    - SEALOS_OCI_RUNTIME=runc
   ssh: {}
 ---
 apiVersion: kubeadm.k8s.io/v1beta4

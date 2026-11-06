@@ -18,7 +18,7 @@ imports = []
 [plugins."io.containerd.cri.v1.runtime"]
   disable_apparmor = true
   [plugins."io.containerd.cri.v1.runtime".containerd]
-    default_runtime_name = "crun"
+    default_runtime_name = "runc"
     [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.crun]
       runtime_type = "io.containerd.runc.v2"
       runtime_path = "/opt/sealos-v137/bin/containerd-shim-runc-v2"

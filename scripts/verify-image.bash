@@ -17,7 +17,7 @@ grep -q "address = '/run/containerd-v137/containerd.sock.ttrpc'" /tmp/verified-c
 grep -q "runtime_path = '/opt/sealos-v137/bin/containerd-shim-runc-v2'" /tmp/verified-containerd-v137.toml
 grep -q "config_path = '/etc/containerd-v137/certs.d'" /tmp/verified-containerd-v137.toml
 grep -q "sandbox = 'sealos.hub:5000/pause:3.10.2'" /tmp/verified-containerd-v137.toml
-grep -q "default_runtime_name = 'crun'" /tmp/verified-containerd-v137.toml
+grep -q "default_runtime_name = 'runc'" /tmp/verified-containerd-v137.toml
 grep -q "BinaryName = '/opt/sealos-v137/bin/runc'" /tmp/verified-containerd-v137.toml
 
 # Exercise the registry from the packaged files without an upstream registry.
@@ -43,7 +43,13 @@ while read -r image; do
     "http://127.0.0.1:15000/v2/${repo}/manifests/${tag}" > /dev/null
   printf 'Verified offline manifest: %s\n' "$image"
 done < <(kubeadm config images list --kubernetes-version v1.37.1; cat /images/shim/AddonImageList)
-test -s /manifests/cilium.yaml
+# The Kubernetes rootfs must not bundle the independently managed Cilium release.
+test ! -e /charts/cilium.tgz
+test ! -e /manifests/cilium.yaml
+if grep -qi cilium /images/shim/DefaultImageList /images/shim/AddonImageList; then
+  echo 'Cilium image found in the Kubernetes image list' >&2
+  exit 1
+fi
 for image in $(cat /images/shim/AddonImageList); do
   repo_tag=${image#*/}
   repo=${repo_tag%:*}

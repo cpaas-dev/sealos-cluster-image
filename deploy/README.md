@@ -1,60 +1,17 @@
-# Cilium deployment for the Kubernetes v1.37.1 image
+# 旧版 Kubernetes 1.37.1 镜像的 Cilium 部署记录（历史资料）
 
-Build, image import, patched Sealos CLI setup, and end-to-end commands are in
-the repository [README](../README.md).
+**本页仅用于追溯旧部署，不是新集群操作手册。** 新镜像 `bbzhu/kubernetes:v1.37.1-k8s-only` 不包含 Cilium Chart、清单、镜像或 `deploy/cilium-install.sh`。新集群请按 [Kubernetes 1.37.1 离线部署操作手册](OPERATIONS_K8S_1.37.1_OFFLINE.md)使用独立 [Cilium Helm 离线包](../cilium/README.md)，**不要对新集群运行旧脚本**。实际完成的 node01 新部署见 [验收记录](DEPLOYMENT_NODE01_K8S_ONLY.md)。
 
-On 2026-10-27, `bbzhu/kubernetes:v1.37.1` (image ID
-`sha256:42a7c6f9e47f20ec6406c72c3aff0d98ead27330a279992b7a53254471b79b93`)
-was deployed on node01 by a patched Sealos 5.1.1 `apply`. The named cluster
-`kubernetes-v137-cilium` reached `ClusterSuccess`: node Ready, API ready, Cilium
-and CoreDNS Ready, and ordinary Pods passed DNS, ClusterIP and Pod-IP checks.
-The test namespace was removed. Docker containers and the shared Docker
-containerd process remained running with unchanged IDs/PIDs. This is a
-single-node validation; restart and multi-node behavior remain untested.
+## 旧集群背景
 
-The rootfs image includes Cilium 1.20.4, its Helm chart, rendered manifest, and
-offline images for the agent, operator and Envoy. Install Cilium after the API
-server and kube-proxy are available, before scheduling ordinary workloads.
+2026-10-27，使用补丁版 Sealos 5.1.1 将旧镜像 `bbzhu/kubernetes:v1.37.1`（当时部署的镜像 ID 为 `sha256:42a7c6f9e47f20ec6406c72c3aff0d98ead27330a279992b7a53254471b79b93`）部署至 node01。旧集群名为 `kubernetes-v137-cilium`，当时达到 `ClusterSuccess`：节点、API、Cilium、CoreDNS Ready，普通 Pod 通过 DNS、ClusterIP 和 Pod IP 单节点测试。测试命名空间已删除；Docker 容器及其共享 containerd 未受影响。**该旧集群现已清理，不可把旧记录当成当前运行状态。**
 
-```bash
-sudo env KUBECONFIG=/etc/kubernetes/admin.conf bash \
-  /var/lib/sealos/data/kubernetes-v137-cilium/rootfs/deploy/cilium-install.sh
-```
+旧镜像把 Cilium 1.20.4 Chart、预渲染清单及 agent/operator/Envoy 镜像打包在 Kubernetes rootfs 内；旧 `deploy/cilium-install.sh` 使用 `kubectl apply` 安装清单，**不会创建 Helm release**。它保留 kube-proxy，使用 VXLAN 和 Kubernetes PodCIDR，遇到 Flannel 时会退出；不能用于现有 CNI 的原地迁移。新版本已经将这些 Cilium 资产从 Kubernetes 镜像移出，由独立离线包和 Helm 管理。
 
-The script applies the packaged manifest without downloading a chart. It uses
-VXLAN, Kubernetes PodCIDR allocation and keeps kube-proxy enabled. The local
-registry must already serve the packaged images through image-cri-shim. It stops
-if Flannel is installed; migrating an existing CNI requires a separate procedure.
+## 宿主机与隔离 CRI
 
-`Clusterfile.cilium.yaml` bootstraps the runtime on a clean host. A Cilium agent
-container image is not a Sealos application image and must not appear in
-`spec.image`. Install the packaged manifest after runtime initialization.
+宿主机的 Docker 工作负载继续使用共享 containerd；Kubernetes 使用独立的 `containerd-v137`。Clusterfile 通过 `SEALOS_ISOLATED_CRI=true` 启用隔离模式，相关 Sealos 5.1.1 补丁位于 `patches/sealos-v5.1.1-isolated-cri.patch`，CLI 构建说明见仓库 [README](../README.md)。新镜像的独立 CRI 默认 runc 1.3.4，可在**部署前**设置 `SEALOS_OCI_RUNTIME=crun` 选择 crun 1.29.1；Docker 运行时不随之切换。node01 的**新集群**已实际验证 runc 默认配置，不能再沿用“runc 待部署”的旧结论。
 
-The host uses Docker's existing containerd for Docker workloads and a separate
-`containerd-v137` for Kubernetes. `Clusterfile.cilium.yaml` enables isolated
-CRI mode. The image's init and clean scripts only operate on the isolated
-runtime in that mode. `patches/sealos-v5.1.1-isolated-cri.patch` updates Sealos
-5.1.1 host checks, CRI selection and OCI-layout registry sync. The complete
-CLI build command is in the repository README.
+不要无参数执行 `sealos status` 或 `sealos reset`：旧 `default` Sealos 记录指向 `192.168.0.35`，其清理脚本可能影响共享 Docker containerd。新集群的操作、镜像导入、Helm 验收均以 [操作手册](OPERATIONS_K8S_1.37.1_OFFLINE.md)为准。
 
-The updated image packages containerd 2.3.4, crun 1.29.1 and optional runc
-1.3.4. The image build and offline checks passed; a cluster using runc as its
-default runtime still needs deployment validation.
-`SEALOS_OCI_RUNTIME=crun` is the validated default in the Clusterfile. For a
-new cluster, change it to `SEALOS_OCI_RUNTIME=runc` before `sealos apply`; the
-isolated containerd then selects runc without changing Docker's runtime.
-
-`sealos apply -f deploy/Clusterfile.cilium.yaml` creates the named cluster.
-After the API and kube-proxy are available, run `deploy/cilium-install.sh`.
-Inspect it with `sealos status --cluster kubernetes-v137-cilium` and
-`KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pods -A`. The status command
-still displays some default registry/shim configuration values; check the
-Clusterfile and `/run/containerd-v137/containerd.sock` for the actual runtime.
-Never reset the old `default` Sealos record: it points to 192.168.0.35 and
-uses cleanup scripts that can remove Docker's containerd files.
-
-Chart SHA256: `505abff8385811df1a949776fc42e9f10697989a332acc86d6e8933efcb855ed`.
-Values are in `cilium/values.yaml`. Changing versions requires updating the chart
-checksum and offline image list together. The Cilium 1.20 compatibility matrix
-lists Kubernetes 1.33 through 1.36; Kubernetes 1.37 requires local acceptance tests.
-The current host kernel also needs a separate Cilium requirements check.
+旧 Chart SHA256 为 `505abff8385811df1a949776fc42e9f10697989a332acc86d6e8933efcb855ed`。Cilium 1.20 与 Kubernetes 1.37 的兼容性、当前宿主机内核要求，以及多节点/整机重启仍需独立验收；单节点烟测不等于生产支持声明。

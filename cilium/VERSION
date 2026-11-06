@@ -1,0 +1,3 @@
+cilium=1.20.4
+platform=linux/amd64
+chart_sha256=505abff8385811df1a949776fc42e9f10697989a332acc86d6e8933efcb855ed
