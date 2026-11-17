@@ -1,0 +1,101 @@
+name: Build
+
+# 构建 sealos 集群镜像（rootfs）。
+#
+# 触发方式：
+#   pull_request / push 到 main 或版本分支（如 v1.33.x）   lint + 构建，不推送
+#   workflow_dispatch   手动指定 Kubernetes 版本：构建、推送镜像，再创建同名
+#                       GitHub Release 和 tag；已发布的版本拒绝覆盖
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "v*.x"
+  workflow_dispatch:
+    inputs:
+      kubernetes_version:
+        description: "Kubernetes version (e.g., v1.33.13)"
+        required: true
+        type: string
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: ShellCheck
+        run: |
+          shellcheck -x scripts/*.bash scripts/*/*.bash scripts/*/*.sh build/*.bash .github/scripts/*.bash
+      - name: Dockerfile check
+        run: docker build --check .
+
+  build:
+    name: Build image
+    needs: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      packages: write
+    concurrency:
+      group: build-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Resolve version
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.kubernetes_version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: .github/scripts/resolve_build.bash
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to ghcr.io
+        if: steps.plan.outputs.push == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build${{ steps.plan.outputs.push == 'true' && ' and push' || '' }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ steps.plan.outputs.push == 'true' }}
+          tags: ${{ env.IMAGE_NAME }}:${{ steps.plan.outputs.version }}
+          build-args: |
+            INST_KUBERNETES_V=${{ steps.plan.outputs.version }}
+          # ghcr links a multi-arch package to the repo via the index annotation
+          annotations: |
+            index:org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          provenance: false
+          sbom: false
+      - name: Verify manifest list
+        if: steps.plan.outputs.push == 'true'
+        run: |
+          .github/scripts/verify_manifest.bash \
+            "${{ env.IMAGE_NAME }}:${{ steps.plan.outputs.version }}" \
+            linux/amd64 linux/arm64
+      - name: Create GitHub Release
+        if: steps.plan.outputs.push == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          .github/scripts/create_release.bash \
+            "${{ steps.plan.outputs.version }}" \
+            "${{ env.IMAGE_NAME }}:${{ steps.plan.outputs.version }}"

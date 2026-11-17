@@ -1,0 +1,5 @@
+server = "https://harbor.cpaas.dev"
+
+[host."https://harbor.cpaas.dev"]
+  capabilities = ["pull", "resolve", "push"]
+  skip_verify = true

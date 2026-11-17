@@ -1,0 +1,6 @@
+server = "http://{{ .registryDomain }}:{{ .registryPort }}"
+
+[host."http://{{ .registryDomain }}:{{ .registryPort }}"]
+  capabilities = ["pull", "resolve"]
+  [host."http://{{ .registryDomain }}:{{ .registryPort }}".header]
+    Authorization = "Basic {{ printf "%s:%s" .registryUsername .registryPassword | b64enc }}"

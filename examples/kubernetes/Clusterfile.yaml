@@ -1,0 +1,338 @@
+---
+apiVersion: apps.sealos.io/v1beta1
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: default
+spec:
+  hosts:
+    - ips:
+        - 192.168.4.161:22
+      roles:
+        - master
+        - amd64
+  image:
+    - ghcr.io/cpaas-dev/sealos-cluster-image:v1.33.13-2
+  ssh:
+    pk: /root/.ssh/id_rsa
+    port: 22
+    user: root
+status: {}
+
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 192.168.4.161
+  bindPort: 6443
+nodeRegistration:
+  kubeletExtraArgs:
+    - name: node-ip
+      value: 192.168.4.161
+  taints: null
+skipPhases:
+  - addon/coredns
+  - addon/kube-proxy
+
+---
+apiServer:
+  certSANs:
+    - 127.0.0.1
+    - apiserver.cluster.local
+    - 10.103.97.2
+    - 192.168.4.161
+    - apiserver.staging-kube-cluster.cpaas.dev # Domain
+  extraArgs:
+    - name: audit-log-format
+      value: json
+    - name: audit-log-maxage
+      value: "7"
+    - name: audit-log-maxbackup
+      value: "10"
+    - name: audit-log-maxsize
+      value: "100"
+    - name: audit-log-path
+      value: /var/log/kubernetes/audit.log
+    - name: audit-policy-file
+      value: /etc/kubernetes/audit-policy.yml
+    - name: enable-aggregator-routing
+      value: "true"
+    - name: service-cluster-ip-range
+      # value: "10.8.0.0/14,fd85:ee78:d8a6:8607::8:0000/110"
+      value: "10.8.0.0/14"
+    - name: service-node-port-range
+      value: "30000-60000"
+    - name: default-not-ready-toleration-seconds
+      value: "60"
+    - name: default-unreachable-toleration-seconds
+      value: "60"
+    # - name: feature-gates
+    #   value: "DynamicResourceAllocation=true"
+    # - name: runtime-config
+    #   value: resource.k8s.io/v1beta2=true
+  extraVolumes:
+    - hostPath: /etc/kubernetes
+      mountPath: /etc/kubernetes
+      name: audit
+      pathType: DirectoryOrCreate
+    - hostPath: /var/log/kubernetes
+      mountPath: /var/log/kubernetes
+      name: audit-log
+      pathType: DirectoryOrCreate
+    - hostPath: /etc/localtime
+      mountPath: /etc/localtime
+      name: localtime
+      pathType: File
+      readOnly: true
+apiVersion: kubeadm.k8s.io/v1beta4
+controlPlaneEndpoint: apiserver.cluster.local:6443
+controllerManager:
+  extraArgs:
+    - name: bind-address
+      value: 0.0.0.0
+    - name: cluster-signing-duration
+      value: 876000h
+    - name: node-cidr-mask-size-ipv4
+      value: "24"
+    # - name: node-cidr-mask-size-ipv6
+    #   value: "120"
+    # - name: feature-gates
+    #   value: "DynamicResourceAllocation=true"
+  extraVolumes:
+    - hostPath: /etc/localtime
+      mountPath: /etc/localtime
+      name: localtime
+      pathType: File
+      readOnly: true
+dns: {}
+etcd:
+  local:
+    dataDir: ""
+    extraArgs:
+      - name: listen-metrics-urls
+        value: http://0.0.0.0:2381
+      - name: quota-backend-bytes
+        value: "8589934592" # $((8*1024*1024*1024))
+      - name: auto-compaction-mode
+        value: "periodic"
+      - name: auto-compaction-retention
+        value: "72h"
+kind: ClusterConfiguration
+kubernetesVersion: v1.33.13
+networking:
+  # podSubnet: 10.4.0.0/14,fd85:ee78:d8a6:8607::4:0000/110
+  # serviceSubnet: 10.8.0.0/14,fd85:ee78:d8a6:8607::8:0000/110
+  podSubnet: 10.4.0.0/14
+  serviceSubnet: 10.8.0.0/14
+  dnsDomain: "cluster.local"
+proxy: {}
+scheduler:
+  extraArgs:
+    - name: bind-address
+      value: 0.0.0.0
+    # - name: feature-gates
+    #   value: "DynamicResourceAllocation=true"
+  extraVolumes:
+    - hostPath: /etc/localtime
+      mountPath: /etc/localtime
+      name: localtime
+      pathType: File
+      readOnly: true
+
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+caCertPath: /etc/kubernetes/pki/ca.crt
+controlPlane:
+  localAPIEndpoint:
+    bindPort: 6443
+discovery: {}
+kind: JoinConfiguration
+nodeRegistration:
+  taints: null
+
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+bindAddress: 0.0.0.0
+bindAddressHardFail: false
+clientConnection:
+  acceptContentTypes: ""
+  burst: 10
+  contentType: application/vnd.kubernetes.protobuf
+  kubeconfig: ""
+  qps: 5
+# clusterCIDR: "10.4.0.0/14,fd85:ee78:d8a6:8607::4:0000/110"
+clusterCIDR: "10.4.0.0/14"
+configSyncPeriod: 15m0s
+conntrack:
+  maxPerCore: 32768
+  min: 131072
+  tcpBeLiberal: false
+  tcpCloseWaitTimeout: 1h0m0s
+  tcpEstablishedTimeout: 24h0m0s
+  udpStreamTimeout: 0s
+  udpTimeout: 0s
+detectLocal:
+  bridgeInterface: ""
+  interfaceNamePrefix: ""
+detectLocalMode: ""
+enableProfiling: false
+healthzBindAddress: 0.0.0.0:10256
+hostnameOverride: ""
+iptables:
+  localhostNodePorts: true
+  masqueradeAll: false
+  masqueradeBit: 14
+  minSyncPeriod: 1s
+  syncPeriod: 30s
+ipvs:
+  excludeCIDRs:
+    - 10.103.97.2/32
+  minSyncPeriod: 0s
+  scheduler: ""
+  strictARP: false
+  syncPeriod: 30s
+  tcpFinTimeout: 0s
+  tcpTimeout: 0s
+  udpTimeout: 0s
+kind: KubeProxyConfiguration
+logging:
+  flushFrequency: 5s
+  format: text
+  options:
+    json:
+      infoBufferSize: "0"
+    text:
+      infoBufferSize: "0"
+  verbosity: 0
+metricsBindAddress: 0.0.0.0:10249
+mode: ipvs
+nftables:
+  masqueradeAll: false
+  masqueradeBit: 14
+  minSyncPeriod: 1s
+  syncPeriod: 30s
+nodePortAddresses: null
+oomScoreAdj: -999
+portRange: ""
+showHiddenMetricsForVersion: ""
+winkernel:
+  enableDSR: false
+  forwardHealthCheckVip: false
+  networkName: ""
+  rootHnsEndpointName: ""
+  sourceVip: ""
+
+---
+address: 0.0.0.0
+apiVersion: kubelet.config.k8s.io/v1beta1
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    cacheTTL: 2m0s
+    enabled: true
+  x509:
+    clientCAFile: /etc/kubernetes/pki/ca.crt
+authorization:
+  mode: Webhook
+  webhook:
+    cacheAuthorizedTTL: 5m0s
+    cacheUnauthorizedTTL: 30s
+cgroupDriver: systemd
+cgroupsPerQOS: true
+configMapAndSecretChangeDetectionStrategy: Watch
+containerLogMaxFiles: 5
+containerLogMaxSize: 10Mi
+containerLogMaxWorkers: 1
+containerLogMonitorInterval: 10s
+containerRuntimeEndpoint: unix:///run/containerd/containerd.sock
+contentType: application/vnd.kubernetes.protobuf
+cpuCFSQuota: true
+cpuCFSQuotaPeriod: 100ms
+cpuManagerPolicy: none
+cpuManagerReconcilePeriod: 10s
+enableControllerAttachDetach: true
+enableDebugFlagsHandler: true
+enableDebuggingHandlers: true
+enableProfilingHandler: true
+enableServer: true
+enableSystemLogHandler: true
+# enforceNodeAllocatable:
+#   - pods
+eventBurst: 100
+eventRecordQPS: 50
+evictionHard:
+  imagefs.available: 10%
+  memory.available: 100Mi
+  nodefs.available: 10%
+  nodefs.inodesFree: 5%
+evictionPressureTransitionPeriod: 5m0s
+failSwapOn: true
+fileCheckFrequency: 20s
+hairpinMode: promiscuous-bridge
+healthzBindAddress: 0.0.0.0
+healthzPort: 10248
+httpCheckFrequency: 20s
+imageGCHighThresholdPercent: 85
+imageGCLowThresholdPercent: 80
+imageMaximumGCAge: 0s
+imageMinimumGCAge: 2m0s
+iptablesDropBit: 15
+iptablesMasqueradeBit: 14
+kind: KubeletConfiguration
+kubeAPIBurst: 100
+kubeAPIQPS: 50
+localStorageCapacityIsolation: true
+logging:
+  flushFrequency: 5000000000
+  format: text
+  options:
+    json:
+      infoBufferSize: "0"
+    text:
+      infoBufferSize: "0"
+  verbosity: 0
+makeIPTablesUtilChains: true
+maxOpenFiles: 1000000
+maxPods: 240
+memoryManagerPolicy: None
+memorySwap: {}
+memoryThrottlingFactor: 0.8
+nodeLeaseDurationSeconds: 40
+nodeStatusMaxImages: 50
+nodeStatusReportFrequency: 10s
+nodeStatusUpdateFrequency: 10s
+oomScoreAdj: -999
+podLogsDir: /var/log/pods
+podPidsLimit: -1
+port: 10250
+registerNode: true
+registryBurst: 100
+registryPullQPS: 50
+rotateCertificates: true
+runtimeRequestTimeout: 2m0s
+seccompDefault: false
+serializeImagePulls: false
+shutdownGracePeriod: 0s
+shutdownGracePeriodCriticalPods: 0s
+staticPodPath: /etc/kubernetes/manifests
+streamingConnectionIdleTimeout: 4h0m0s
+syncFrequency: 1m0s
+topologyManagerPolicy: none
+topologyManagerScope: container
+volumePluginDir: /usr/libexec/kubernetes/kubelet-plugins/volume/exec/
+volumeStatsAggPeriod: 1m0s
+kubeReserved:
+  cpu: 500m
+  memory: 1Gi
+  ephemeral-storage: 1Gi
+systemReserved:
+  memory: 1Gi
+featureGates:
+  DynamicResourceAllocation: true
+  InPlacePodVerticalScaling: true
+# 由于当前版本 bug 请删除以下字段
+# enforceNodeAllocatable:
+#   - pods
+#   - system-reserved
+#   - kube-reserved

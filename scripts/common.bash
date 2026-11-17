@@ -1,18 +1,14 @@
 #!/usr/bin/env bash
 
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2022 sealos.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Modified by cpaas-dev.
+
+# Absolute path of the sealos rootfs (parent of this scripts directory),
+# resolved from this file's location so callers never depend on the cwd.
+# shellcheck disable=SC2034 # used by the scripts that source this file
+ROOTFS_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd) || exit 1
+readonly ROOTFS_DIR
 
 timestamp() {
     date +"%Y-%m-%d %T"
@@ -60,8 +56,7 @@ check_service() {
 check_status() {
     for unit; do
         logger "Health check $unit!"
-        status=$(systemctl status "$unit" | grep Active | awk '{print $3}')
-        if [[ $status = "(running)" ]]; then
+        if systemctl is-active --quiet "$unit"; then
             logger "$unit is running"
         else
             error "$unit status is error"
@@ -99,21 +94,15 @@ get_distribution() {
     echo "$lsb_dist"
 }
 
+# Only touch the firewall tools that are actually installed on the host.
 disable_firewalld() {
-    lsb_dist=$(get_distribution)
-    lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
-    case "$lsb_dist" in
-    ubuntu | deepin | debian | raspbian)
-        command -v ufw &>/dev/null && ufw disable
-        ;;
-    centos | rhel | ol | sles | kylin | neokylin)
-        systemctl stop firewalld && systemctl disable firewalld
-        ;;
-    *)
-        systemctl stop firewalld && systemctl disable firewalld
-        echo "unknown system, use default to stop firewalld"
-        ;;
-    esac
+    if command_exists ufw; then
+        ufw disable
+    fi
+    if systemctl list-unit-files firewalld.service &>/dev/null; then
+        systemctl stop firewalld
+        systemctl disable firewalld
+    fi
 }
 
 command_exists() {

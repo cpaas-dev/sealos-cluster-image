@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2022 sealos.
+# Modified by cpaas-dev.
+
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+  cache:
+    blobdescriptor: inmemory
+  filesystem:
+    rootdirectory: {{ .registryData }}
+  delete:
+    enabled: true
+http:
+  addr: :{{ .registryPort }}
+  debug:
+    addr: :5001
+    prometheus:
+      enabled: true
+      path: /metrics
+  headers:
+    X-Content-Type-Options: [nosniff]
+proxy:
+  on: true
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
+auth:
+  htpasswd:
+    realm: "Registry Realm"
+    path: {{ .registryConfig }}/registry_htpasswd

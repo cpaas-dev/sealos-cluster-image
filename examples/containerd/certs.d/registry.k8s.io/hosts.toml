@@ -1,0 +1,7 @@
+server = "https://registry.k8s.io"
+
+[host."http://nexus-mirror-01.cpaas.dev:9602"]
+  capabilities = ["pull", "resolve"]
+
+[host."http://nexus-mirror-02.cpaas.dev:9602"]
+  capabilities = ["pull", "resolve"]

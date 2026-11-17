@@ -1,0 +1,7 @@
+server = "https://quay.io"
+
+[host."http://nexus-mirror-01.cpaas.dev:9604"]
+  capabilities = ["pull", "resolve"]
+
+[host."http://nexus-mirror-02.cpaas.dev:9604"]
+  capabilities = ["pull", "resolve"]

@@ -1,0 +1,9 @@
+# Read by sealos itself at this fixed path (<rootfs>/etc/registry.yml) for the
+# /etc/hosts entry, kubeadm image pre-pull and htpasswd. Rendered from the same
+# image ENV as the scripts, so both always agree. `ip` is left out: sealos then
+# uses the registry host (master0 unless a node has the registry role).
+domain: {{ .registryDomain }}
+port: "{{ .registryPort }}"
+username: "{{ .registryUsername }}"
+password: "{{ .registryPassword }}"
+data: "{{ .registryData }}"

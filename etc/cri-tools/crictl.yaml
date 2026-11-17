@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2022 sealos.
+# Modified by cpaas-dev.
+image-endpoint: unix:///var/run/image-cri-shim.sock
+runtime-endpoint: unix:///run/containerd/containerd.sock

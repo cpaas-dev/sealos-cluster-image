@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2022 sealos.
+# Modified by cpaas-dev.
+
+shim: {{.SEALOS_SYS_IMAGE_ENDPOINT}}
+cri: {{.SEALOS_SYS_CRI_ENDPOINT}}
+address: http://{{ .registryDomain }}:{{ .registryPort }}
+force: true
+debug: false
+timeout: 15m
+auth: {{ .registryUsername }}:{{ .registryPassword }}
+# Extra registries, looked up in order after `address` misses. The image path is
+# kept and only the domain is swapped, so Harbor must hold e.g. library/nginx for
+# `nginx`. TLS trust for each host goes to etc/containerd/certs.d/<host>/.
+# registries:
+#   - address: https://harbor.example.com
+#     auth: user:password

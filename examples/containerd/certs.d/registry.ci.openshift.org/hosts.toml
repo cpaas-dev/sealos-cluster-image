@@ -1,0 +1,7 @@
+server = "https://registry.ci.openshift.org"
+
+[host."http://nexus-mirror-01.cpaas.dev:9603"]
+  capabilities = ["pull", "resolve"]
+
+[host."http://nexus-mirror-02.cpaas.dev:9603"]
+  capabilities = ["pull", "resolve"]
