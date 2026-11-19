@@ -5,8 +5,8 @@
 # 用法：create_release.bash VERSION IMAGE_REF
 #
 # 参数：
-#   VERSION     Kubernetes 版本，也是 tag 名，如 v1.34.13
-#   IMAGE_REF   已推送的镜像，如 ghcr.io/cpaas-dev/sealos-cluster-image:v1.34.13
+#   VERSION     Kubernetes 版本，也是 tag 名，如 v1.35.9
+#   IMAGE_REF   已推送的镜像，如 ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.9
 #
 # 环境变量：
 #   GH_TOKEN      gh CLI 凭据

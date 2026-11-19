@@ -7,7 +7,7 @@
 # 用法：resolve_build.bash
 #
 # 环境变量：
-#   INPUT_VERSION  必填，workflow_dispatch 的 kubernetes_version，如 v1.34.13
+#   INPUT_VERSION  必填，workflow_dispatch 的 kubernetes_version，如 v1.35.9
 #   GH_TOKEN       gh CLI 凭据
 #   GH_REPO        目标仓库，如 cpaas-dev/sealos-cluster-image
 #
