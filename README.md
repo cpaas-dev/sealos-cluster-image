@@ -29,7 +29,7 @@ sealos 的 rootfs 类型集群镜像，镜像里自带 Kubernetes 二进制、�
 | crun（默认运行时） | `v1.31` | [kluster-vendor-crun](https://github.com/cpaas-dev/kluster-vendor-crun) |
 | runc | `v1.5.3` | [kluster-vendor-runc](https://github.com/cpaas-dev/kluster-vendor-runc) |
 | crictl | `v1.37.0` | [kluster-vendor-cri-tools](https://github.com/cpaas-dev/kluster-vendor-cri-tools) |
-| sealctl / image-cri-shim / lvscare | `v5.1.1` | [kluster-vendor-sealos](https://github.com/cpaas-dev/kluster-vendor-sealos) |
+| sealctl / image-cri-shim / lvscare | `v5.1.2-rc6` | [kluster-vendor-sealos](https://github.com/cpaas-dev/kluster-vendor-sealos) |
 | distribution registry | `v3.1.2` | [kluster-vendor-registry](https://github.com/cpaas-dev/kluster-vendor-registry) |
 | oras | `v1.4.0` | [kluster-vendor-oras](https://github.com/cpaas-dev/kluster-vendor-oras) |
 
@@ -77,7 +77,7 @@ sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.33.13 \
 前提：
 
 - 节点上不能预先装有 containerd 或 docker，`check` 阶段会直接失败
-- 使用 sealos `v5.1.1`，与镜像里的 `opt/sealctl` 一致
+- 使用 sealos `v5.1.2-rc6`，与镜像里的 `opt/sealctl` 一致
 
 ### 可覆盖的环境变量
 
@@ -109,8 +109,31 @@ image-cri-shim 只换域名、保留镜像路径，命中后用它自己配置�
 `kubeadm` / `kubelet` / `kubectl` 并执行 `kubeadm upgrade`，不会重新执行 `init`，
 containerd 等组件不会随之升级；每次只能升一个 minor。
 
-> sealos `v5.1.1` 的 1.33+ 升级流程存在已知问题，上游修复
-> [`14a199891`](https://github.com/labring/sealos/commit/14a199891) 尚未进入任何发布版本。
+> 升级到 1.33+ 需要 sealos `v5.1.2-rc6` 及以上：它带了上游修复
+> [`4cf5233f6`](https://github.com/labring/sealos/commit/4cf5233f6)（#6993），`v5.1.1` 的升级流程在 1.33+ 上有已知问题。
+
+#### 升级后的 sandbox（pause）镜像
+
+不同 minor 的 kubeadm 期望的 pause 版本可能不同（如 1.33 是 `pause:3.10`，1.34 是
+`pause:3.10.1`）。containerd 在 `/etc/containerd/config.toml` 的
+`pinned_images.sandbox` 里固定了 pause 镜像，这个文件只在 `init` 时生成，升级不会改它，
+所以升级后节点上仍固定着旧版本：
+
+- 已有 Pod 不受影响；新 Pod 的 sandbox 仍由 containerd 用旧 pause 创建，功能正常
+- 旧 pause 镜像会一直留在节点上，`kubeadm upgrade` 可能提示 sandbox image 与期望不一致
+
+需要对齐时，在每个节点上把 `sandbox` 改成新版本并重启 containerd（新版 pause 已随新镜像
+同步进 registry；重启 containerd 不会停掉运行中的容器）：
+
+```bash
+# e.g. after upgrading to v1.34.x
+sed -i -E 's#^(\s*sandbox = ").*(")#\1sealos.hub:5000/pause:3.10.1\2#' /etc/containerd/config.toml
+systemctl restart containerd
+crictl --image-endpoint unix:///var/run/image-cri-shim.sock pull sealos.hub:5000/pause:3.10.1
+```
+
+`sealos.hub:5000` 和 pause 版本以集群实际的 `registryDomain:registryPort` 和新镜像的
+`sandboxImage` 为准。
 
 ## 构建
 
