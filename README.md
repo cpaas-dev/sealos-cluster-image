@@ -143,13 +143,14 @@ docker buildx build --platform linux/amd64,linux/arm64 \
   -t xxx .
 ```
 
-CI（`.github/workflows/build.yml`）：
+CI（`.github/workflows/build.yml`）只能手动触发，不随 push / PR 自动运行。在对应的版本分支上
+触发（1.33 用 `v1.33.x`，1.34 用 `v1.34.x`），用的是该分支上的 Dockerfile 和脚本：
 
-- PR、push 到 `main` 或版本分支（如 `v1.34.x`）：shellcheck + Dockerfile 检查 + 构建，不推送
-- 手动触发（`kubernetes_version` 填如 `v1.34.13`）：构建并推送
+- lint（shellcheck + Dockerfile 检查）通过后，构建并推送
   `ghcr.io/cpaas-dev/sealos-cluster-image:<版本>`，校验 manifest list 同时包含两个架构，
-  再创建同名的 GitHub Release 和 tag，notes 里列出各组件版本。已发布的版本拒绝覆盖，
-  要重新构建需先删除对应的 Release 和 tag
+  再创建同名的 GitHub Release 和 tag，notes 里列出各组件版本
+- 已发布的版本拒绝覆盖，要重新构建需先删除对应的 Release 和 tag
+- 手动触发要求 workflow 文件存在于仓库默认分支上
 
 ```bash
 gh workflow run build.yml -R cpaas-dev/sealos-cluster-image --ref v1.34.x -f kubernetes_version=v1.34.13
