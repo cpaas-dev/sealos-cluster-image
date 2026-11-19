@@ -1,7 +1,7 @@
 # syntax=docker.io/docker/dockerfile:1.25.0
 
 # https://github.com/cpaas-dev/kluster-vendor-kubernetes/releases
-ARG INST_KUBERNETES_V=v1.36.6
+ARG INST_KUBERNETES_V=v1.37.2
 # https://github.com/cpaas-dev/kluster-vendor-containerd/releases
 ARG INST_CONTAINERD_V=v2.4.2
 # https://github.com/cpaas-dev/kluster-vendor-runc/releases
@@ -47,7 +47,7 @@ RUN oci-to-registry.bash /registry \
 
 FROM scratch
 
-ARG INST_KUBERNETES_V=v1.36.6
+ARG INST_KUBERNETES_V=v1.37.2
 ARG INST_SEALOS_V=v5.1.2
 
 COPY --from=kubernetes \
