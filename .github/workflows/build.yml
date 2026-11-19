@@ -3,7 +3,7 @@ name: Build
 # 构建 sealos 集群镜像（rootfs）。
 #
 # 触发方式：
-#   pull_request / push 到 main 或版本分支（如 v1.33.x）   lint + 构建，不推送
+#   pull_request / push 到 main 或版本分支（如 v1.34.x）   lint + 构建，不推送
 #   workflow_dispatch   手动指定 Kubernetes 版本：构建、推送镜像，再创建同名
 #                       GitHub Release 和 tag；已发布的版本拒绝覆盖
 
@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       kubernetes_version:
-        description: "Kubernetes version (e.g., v1.33.13)"
+        description: "Kubernetes version (e.g., v1.34.13)"
         required: true
         type: string
 

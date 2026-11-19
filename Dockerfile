@@ -1,7 +1,7 @@
 # syntax=docker.io/docker/dockerfile:1.25.0
 
 # https://github.com/cpaas-dev/kluster-vendor-kubernetes/releases
-ARG INST_KUBERNETES_V=v1.33.13
+ARG INST_KUBERNETES_V=v1.34.13
 # https://github.com/cpaas-dev/kluster-vendor-containerd/releases
 ARG INST_CONTAINERD_V=v2.4.2
 # https://github.com/cpaas-dev/kluster-vendor-runc/releases
@@ -47,7 +47,7 @@ RUN oci-to-registry.bash /registry \
 
 FROM scratch
 
-ARG INST_KUBERNETES_V=v1.33.13
+ARG INST_KUBERNETES_V=v1.34.13
 ARG INST_SEALOS_V=v5.1.2-rc6
 
 COPY --from=kubernetes \
@@ -101,7 +101,7 @@ COPY --from=cri-tools \
 
 ENV \
     defaultVIP=10.103.97.2 \
-    sandboxImage=pause:3.10
+    sandboxImage=pause:3.10.1
 
 ENV \
     criData=/var/lib/containerd \
