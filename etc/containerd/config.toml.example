@@ -30,7 +30,7 @@ oom_score = 0
     max_concurrent_downloads = 20
     use_local_image_pull = true
     [plugins."io.containerd.cri.v1.images".pinned_images]
-      sandbox = "sealos.hub:5000/pause:3.10.1"
+      sandbox = "sealos.hub:5000/pause:3.10.2"
     [plugins."io.containerd.cri.v1.images".registry]
       config_path = "/etc/containerd/certs.d"
 

@@ -7,7 +7,7 @@
 ![Platforms](https://img.shields.io/badge/platforms-linux%2Famd64%20%7C%20linux%2Farm64-informational)
 
 ```bash
-sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.9 \
+sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.36.6 \
   --masters 192.168.0.10 --nodes 192.168.0.11
 ```
 
@@ -24,7 +24,7 @@ sealos 的 rootfs 类型集群镜像，镜像里自带 Kubernetes 二进制、�
 
 | 组件 | 版本 | 来源 |
 | --- | --- | --- |
-| Kubernetes（kubeadm / kubelet / kubectl） | `v1.35.9` | [kluster-vendor-kubernetes](https://github.com/cpaas-dev/kluster-vendor-kubernetes) |
+| Kubernetes（kubeadm / kubelet / kubectl） | `v1.36.6` | [kluster-vendor-kubernetes](https://github.com/cpaas-dev/kluster-vendor-kubernetes) |
 | containerd | `v2.4.2` | [kluster-vendor-containerd](https://github.com/cpaas-dev/kluster-vendor-containerd) |
 | crun（默认运行时） | `v1.31` | [kluster-vendor-crun](https://github.com/cpaas-dev/kluster-vendor-crun) |
 | runc | `v1.5.3` | [kluster-vendor-runc](https://github.com/cpaas-dev/kluster-vendor-runc) |
@@ -69,7 +69,7 @@ sealos 的 rootfs 类型集群镜像，镜像里自带 Kubernetes 二进制、�
 ### 部署
 
 ```bash
-sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.9 \
+sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.36.6 \
   --masters 192.168.0.10,192.168.0.11,192.168.0.12 \
   --nodes 192.168.0.21,192.168.0.22
 ```
@@ -114,8 +114,8 @@ containerd 等组件不会随之升级；每次只能升一个 minor。
 
 #### 升级后的 sandbox（pause）镜像
 
-不同 minor 的 kubeadm 期望的 pause 版本可能不同（如 1.33 是 `pause:3.10`，1.34 是
-`pause:3.10.1`）。containerd 在 `/etc/containerd/config.toml` 的
+不同 minor 的 kubeadm 期望的 pause 版本可能不同（如 1.33 是 `pause:3.10`，1.34 / 1.35 是
+`pause:3.10.1`，1.36 是 `pause:3.10.2`）。containerd 在 `/etc/containerd/config.toml` 的
 `pinned_images.sandbox` 里固定了 pause 镜像，这个文件只在 `init` 时生成，升级不会改它，
 所以升级后节点上仍固定着旧版本：
 
@@ -126,10 +126,10 @@ containerd 等组件不会随之升级；每次只能升一个 minor。
 同步进 registry；重启 containerd 不会停掉运行中的容器）：
 
 ```bash
-# e.g. after upgrading to v1.34.x
-sed -i -E 's#^(\s*sandbox = ").*(")#\1sealos.hub:5000/pause:3.10.1\2#' /etc/containerd/config.toml
+# e.g. after upgrading to v1.36.x
+sed -i -E 's#^(\s*sandbox = ").*(")#\1sealos.hub:5000/pause:3.10.2\2#' /etc/containerd/config.toml
 systemctl restart containerd
-crictl --image-endpoint unix:///var/run/image-cri-shim.sock pull sealos.hub:5000/pause:3.10.1
+crictl --image-endpoint unix:///var/run/image-cri-shim.sock pull sealos.hub:5000/pause:3.10.2
 ```
 
 `sealos.hub:5000` 和 pause 版本以集群实际的 `registryDomain:registryPort` 和新镜像的
@@ -139,12 +139,12 @@ crictl --image-endpoint unix:///var/run/image-cri-shim.sock pull sealos.hub:5000
 
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 \
-  --build-arg INST_KUBERNETES_V=v1.35.9 \
+  --build-arg INST_KUBERNETES_V=v1.36.6 \
   -t xxx .
 ```
 
 CI（`.github/workflows/build.yml`）只能手动触发，不随 push / PR 自动运行。在对应的版本分支上
-触发（1.33 用 `v1.33.x`，1.34 用 `v1.34.x`，1.35 用 `v1.35.x`），用的是该分支上的 Dockerfile 和脚本：
+触发（1.33 用 `v1.33.x`，1.34 用 `v1.34.x`，1.35 用 `v1.35.x`，1.36 用 `v1.36.x`），用的是该分支上的 Dockerfile 和脚本：
 
 - lint（shellcheck + Dockerfile 检查）通过后，构建并推送
   `ghcr.io/cpaas-dev/sealos-cluster-image:<版本>`，校验 manifest list 同时包含两个架构，
@@ -153,7 +153,7 @@ CI（`.github/workflows/build.yml`）只能手动触发，不随 push / PR 自�
 - 手动触发要求 workflow 文件存在于仓库默认分支上
 
 ```bash
-gh workflow run build.yml -R cpaas-dev/sealos-cluster-image --ref v1.35.x -f kubernetes_version=v1.35.9
+gh workflow run build.yml -R cpaas-dev/sealos-cluster-image --ref v1.36.x -f kubernetes_version=v1.36.6
 ```
 
 ## 文档

@@ -2,7 +2,7 @@ name: Build
 
 # 构建 sealos 集群镜像（rootfs）。
 #
-# 只能手动触发（workflow_dispatch）：在对应的版本分支上（如 v1.35.x）运行，
+# 只能手动触发（workflow_dispatch）：在对应的版本分支上（如 v1.36.x）运行，
 # 指定 Kubernetes 版本，lint 后构建、推送镜像，再创建同名 GitHub Release 和 tag；
 # 已发布的版本拒绝覆盖。
 
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       kubernetes_version:
-        description: "Kubernetes version (e.g., v1.35.9)"
+        description: "Kubernetes version (e.g., v1.36.6)"
         required: true
         type: string
 
