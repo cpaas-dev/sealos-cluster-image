@@ -29,7 +29,7 @@ sealos 的 rootfs 类型集群镜像，镜像里自带 Kubernetes 二进制、�
 | crun（默认运行时） | `v1.31` | [kluster-vendor-crun](https://github.com/cpaas-dev/kluster-vendor-crun) |
 | runc | `v1.5.3` | [kluster-vendor-runc](https://github.com/cpaas-dev/kluster-vendor-runc) |
 | crictl | `v1.37.0` | [kluster-vendor-cri-tools](https://github.com/cpaas-dev/kluster-vendor-cri-tools) |
-| sealctl / image-cri-shim / lvscare | `v5.1.2-rc6` | [kluster-vendor-sealos](https://github.com/cpaas-dev/kluster-vendor-sealos) |
+| sealctl / image-cri-shim / lvscare | `v5.1.2` | [kluster-vendor-sealos](https://github.com/cpaas-dev/kluster-vendor-sealos) |
 | distribution registry | `v3.1.2` | [kluster-vendor-registry](https://github.com/cpaas-dev/kluster-vendor-registry) |
 | oras | `v1.4.0` | [kluster-vendor-oras](https://github.com/cpaas-dev/kluster-vendor-oras) |
 
@@ -77,7 +77,7 @@ sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.33.13 \
 前提：
 
 - 节点上不能预先装有 containerd 或 docker，`check` 阶段会直接失败
-- 使用 sealos `v5.1.2-rc6`，与镜像里的 `opt/sealctl` 一致
+- 使用 sealos `v5.1.2`，与镜像里的 `opt/sealctl` 一致
 
 ### 可覆盖的环境变量
 
@@ -109,7 +109,7 @@ image-cri-shim 只换域名、保留镜像路径，命中后用它自己配置�
 `kubeadm` / `kubelet` / `kubectl` 并执行 `kubeadm upgrade`，不会重新执行 `init`，
 containerd 等组件不会随之升级；每次只能升一个 minor。
 
-> 升级到 1.33+ 需要 sealos `v5.1.2-rc6` 及以上：它带了上游修复
+> 升级到 1.33+ 需要 sealos `v5.1.2` 及以上：它带了上游修复
 > [`4cf5233f6`](https://github.com/labring/sealos/commit/4cf5233f6)（#6993），`v5.1.1` 的升级流程在 1.33+ 上有已知问题。
 
 #### 升级后的 sandbox（pause）镜像

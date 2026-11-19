@@ -13,7 +13,7 @@ ARG INST_REGISTRY_V=v3.1.2
 # https://github.com/cpaas-dev/kluster-vendor-oras/releases
 ARG INST_ORAS_V=v1.4.0
 # https://github.com/cpaas-dev/kluster-vendor-sealos/releases
-ARG INST_SEALOS_V=v5.1.2-rc6
+ARG INST_SEALOS_V=v5.1.2
 # https://github.com/cpaas-dev/kluster-vendor-cri-tools/releases
 ARG INST_CRI_TOOLS_V=v1.37.0
 
@@ -48,7 +48,7 @@ RUN oci-to-registry.bash /registry \
 FROM scratch
 
 ARG INST_KUBERNETES_V=v1.33.13
-ARG INST_SEALOS_V=v5.1.2-rc6
+ARG INST_SEALOS_V=v5.1.2
 
 COPY --from=kubernetes \
     /cpaas/vendor/kubernetes/kubeadm \
