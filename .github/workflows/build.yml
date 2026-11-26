@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       kubernetes_version:
-        description: "Kubernetes version (e.g., v1.37.2)"
+        description: "Kubernetes version (e.g., v1.37.3)"
         required: true
         type: string
 
