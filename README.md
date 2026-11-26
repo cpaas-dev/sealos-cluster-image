@@ -7,7 +7,7 @@
 ![Platforms](https://img.shields.io/badge/platforms-linux%2Famd64%20%7C%20linux%2Farm64-informational)
 
 ```bash
-sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.10 \
+sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.11 \
   --masters 192.168.0.10 --nodes 192.168.0.11
 ```
 
@@ -24,7 +24,7 @@ sealos 的 rootfs 类型集群镜像，镜像里自带 Kubernetes 二进制、�
 
 | 组件 | 版本 | 来源 |
 | --- | --- | --- |
-| Kubernetes（kubeadm / kubelet / kubectl） | `v1.35.10` | [kluster-vendor-kubernetes](https://github.com/cpaas-dev/kluster-vendor-kubernetes) |
+| Kubernetes（kubeadm / kubelet / kubectl） | `v1.35.11` | [kluster-vendor-kubernetes](https://github.com/cpaas-dev/kluster-vendor-kubernetes) |
 | containerd | `v2.4.2` | [kluster-vendor-containerd](https://github.com/cpaas-dev/kluster-vendor-containerd) |
 | crun（默认运行时） | `v1.31` | [kluster-vendor-crun](https://github.com/cpaas-dev/kluster-vendor-crun) |
 | runc | `v1.5.3` | [kluster-vendor-runc](https://github.com/cpaas-dev/kluster-vendor-runc) |
@@ -69,7 +69,7 @@ sealos 的 rootfs 类型集群镜像，镜像里自带 Kubernetes 二进制、�
 ### 部署
 
 ```bash
-sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.10 \
+sealos run ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.11 \
   --masters 192.168.0.10,192.168.0.11,192.168.0.12 \
   --nodes 192.168.0.21,192.168.0.22
 ```
@@ -139,7 +139,7 @@ crictl --image-endpoint unix:///var/run/image-cri-shim.sock pull sealos.hub:5000
 
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 \
-  --build-arg INST_KUBERNETES_V=v1.35.10 \
+  --build-arg INST_KUBERNETES_V=v1.35.11 \
   -t xxx .
 ```
 
@@ -153,7 +153,7 @@ CI（`.github/workflows/build.yml`）只能手动触发，不随 push / PR 自�
 - 手动触发要求 workflow 文件存在于仓库默认分支上
 
 ```bash
-gh workflow run build.yml -R cpaas-dev/sealos-cluster-image --ref v1.35.x -f kubernetes_version=v1.35.10
+gh workflow run build.yml -R cpaas-dev/sealos-cluster-image --ref v1.35.x -f kubernetes_version=v1.35.11
 ```
 
 ## 文档

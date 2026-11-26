@@ -12,7 +12,7 @@ spec:
         - master
         - amd64
   image:
-    - ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.10
+    - ghcr.io/cpaas-dev/sealos-cluster-image:v1.35.11
   ssh:
     pk: /root/.ssh/id_rsa
     port: 22
@@ -118,7 +118,7 @@ etcd:
       - name: auto-compaction-retention
         value: "72h"
 kind: ClusterConfiguration
-kubernetesVersion: v1.35.10
+kubernetesVersion: v1.35.11
 networking:
   # podSubnet: 10.4.0.0/14,fd85:ee78:d8a6:8607::4:0000/110
   # serviceSubnet: 10.8.0.0/14,fd85:ee78:d8a6:8607::8:0000/110
